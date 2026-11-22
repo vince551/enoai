@@ -18,7 +18,7 @@ Vexon is a practical AI workspace for individuals, students, developers, entrepr
 
 ## Principles
 
-- Freemium: essential capabilities first; advanced capabilities and higher usage limits can become paid tiers.
+- Free-first: use provider free tiers with explicit limits; no paid model fallback.
 - Secure by design: AI credentials stay server-side and usage is metered by the backend.
 - User control: consequential actions require clear user intent.
 - Accessible: responsive, mobile-first experience.
@@ -26,7 +26,9 @@ Vexon is a practical AI workspace for individuals, students, developers, entrepr
 
 ## Current status
 
-The workspace includes a free-model chat endpoint using the Vercel AI Gateway model `nvidia/nemotron-3.5-lightning-free`. It uses Vercel deployment OIDC, has no paid-model fallback, and caps each request to 12 recent messages and 1,200 output tokens. Conversation history is stored locally in the browser. Authentication, cross-device persistence, file processing, billing and integrations are not connected yet.
+The workspace uses Groq's free-tier API with the model `openai/gpt-oss-20b`. Set the `GROQ_API_KEY` environment variable in Vercel (Production) to enable chat. The API key is read only by the serverless function and is never exposed to browser code. The endpoint does not fall back to a paid provider. Groq free-tier rate limits apply and can change; when a limit is reached, VEXON reports that instead of making a paid request.
+
+Each request is capped at 12 recent messages and 1,200 output tokens. Conversation history is stored locally in the browser. Authentication, cross-device persistence, file processing, billing and integrations are not connected yet.
 
 ## Development
 
@@ -38,13 +40,13 @@ npm run dev
 npm run build
 ```
 
-No API keys are required for the current UI foundation. Future model credentials must be stored only in server-side environment variables.
+For local AI requests, set `GROQ_API_KEY` in a local `.env` file. Never commit API keys or place them in frontend code.
 
 ## Roadmap
 
-1. Secure server-side AI gateway and provider abstraction.
+1. Secure server-side AI provider integration.
 2. Authentication and persistent conversations.
 3. Projects and file workspace.
 4. Usage metering and free-tier limits.
 5. Studio-specific workflows.
-6. Billing after validating usage economics.
+6. Billing only after validating usage economics.
