@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3,
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
