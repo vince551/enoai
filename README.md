@@ -26,7 +26,7 @@ Vexon is a practical AI workspace for individuals, students, developers, entrepr
 
 ## Current status
 
-The first implementation is a React + Vite workspace shell. AI generation, authentication, persistence, file processing, billing and integrations are not connected yet. The UI clearly communicates this rather than simulating working AI functionality.
+The workspace includes a free-model chat endpoint using the Vercel AI Gateway model `nvidia/nemotron-3.5-lightning-free`. It uses Vercel deployment OIDC, has no paid-model fallback, and caps each request to 12 recent messages and 1,200 output tokens. Conversation history is stored locally in the browser. Authentication, cross-device persistence, file processing, billing and integrations are not connected yet.
 
 ## Development
 
