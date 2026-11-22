@@ -3,12 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1020" />
+    <meta name="theme-color" content="#090d18" />
     <meta name="description" content="Vexon — turn ideas into outcomes with AI." />
     <title>Vexon — Your AI workspace</title>
+    <style>
+      html,body{margin:0;min-height:100%;background:#090d18;color:#eef1ff;font-family:system-ui,sans-serif}
+      #boot-status{min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+      .boot-card{width:min(440px,100%);padding:28px;border:1px solid #293653;border-radius:18px;background:#111a2b;box-sizing:border-box}
+      .boot-brand{font-size:24px;font-weight:800;letter-spacing:-1px;margin-bottom:18px}
+      .boot-brand span{color:#91aaff}
+      .boot-title{font-size:17px;font-weight:700;margin-bottom:8px}
+      .boot-copy{font-size:13px;line-height:1.6;color:#aab5ce}
+      .boot-error{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:14px;padding:12px;border-radius:9px;background:#351c29;color:#ffb9c5;font:12px/1.5 ui-monospace,monospace}
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-status">
+        <div class="boot-card">
+          <div class="boot-brand">vexon<span>.</span></div>
+          <div class="boot-title">Starting your workspace…</div>
+          <div class="boot-copy">Vexon is loading. This screen will be replaced automatically when the workspace is ready.</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__vexonShowBootError = function (message) {
+        var root = document.getElementById('root');
+        if (!root) return;
+        root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand">vexon<span>.</span></div><div class="boot-title">Vexon could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
+        var detail = root.querySelector('.boot-error');
+        if (detail) detail.textContent = String(message || 'Unknown startup error');
+      };
+      window.addEventListener('error', function (event) {
+        if (event && (event.error || event.message)) window.__vexonShowBootError(event.message || event.error);
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        window.__vexonShowBootError(event.reason && (event.reason.stack || event.reason.message) || event.reason || 'Unhandled promise rejection');
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
