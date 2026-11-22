@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3,
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
@@ -29,11 +29,44 @@ function App() {
   const [mode, setMode] = useState('Balanced');
   const [notice, setNotice] = useState('Your workspace is ready. Connect an AI provider to start generating.');
   const [showNotice, setShowNotice] = useState(true);
+  const [messages, setMessages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vexon-chat-messages') || '[]'); }
+    catch { return []; }
+  });
+  const [sending, setSending] = useState(false);
 
-  const submitPrompt = () => {
-    if (!prompt.trim()) return;
-    setNotice('Your prompt is ready. AI generation will be enabled when the secure Vexon API is connected.');
+  useEffect(() => {
+    try { localStorage.setItem('vexon-chat-messages', JSON.stringify(messages.slice(-80))); }
+    catch { setNotice('This browser could not save chat history.'); setShowNotice(true); }
+  }, [messages]);
+
+  const submitPrompt = async () => {
+    const text = prompt.trim();
+    if (!text || sending) return;
+    const nextMessages = [...messages, { role: 'user', content: text, id: Date.now() }];
+    setMessages(nextMessages);
+    setPrompt('');
+    setSending(true);
+    setNotice('Vexon is preparing your response with its free model.');
     setShowNotice(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })), studio: active, mode })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Vexon could not complete that request.');
+      setMessages(current => [...current, { role: 'assistant', content: data.text, id: Date.now() + 1 }]);
+      setNotice('Response generated using Vexon’s free AI model.');
+      setShowNotice(true);
+    } catch (error) {
+      setMessages(current => [...current, { role: 'assistant', content: "I couldn't complete that request. " + error.message + " Your question is still available above; you can try again.", id: Date.now() + 1, error: true }]);
+      setNotice(error.message);
+      setShowNotice(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   const selectModule = (item) => {
@@ -55,7 +88,7 @@ function App() {
           <div className="workspace-meta"><strong>Personal workspace</strong><span>Free plan</span></div>
           <ChevronDown size={15} />
         </div>
-        <button className="new-chat" onClick={() => { setActive('Overview'); setPrompt(''); setMobileNav(false); }}>
+        <button className="new-chat" onClick={() => { setActive('Overview'); setPrompt(''); setMessages([]); setMobileNav(false); }}>
           <Plus size={17} /> New workspace
           <span className="shortcut">⌘ K</span>
         </button>
@@ -119,6 +152,14 @@ function App() {
               <div className="hero-tag"><Sparkles size={13} /> THE VEXON AI WORKSPACE</div>
               <h2>What are we <span>working on</span><br className="desktop-break" /> today?</h2>
               <p>From a quick question to a full project, bring your next idea here.</p>
+              {messages.length > 0 && <div className="chat-thread" aria-live="polite">
+                <div className="chat-thread-head"><span>Conversation</span><button onClick={() => setMessages([])}>Clear chat</button></div>
+                {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vexon')} key={message.id}>
+                  <div className="chat-message-label">{message.role === 'user' ? 'You' : 'Vexon'}</div>
+                  <div className="chat-message-content">{message.content}</div>
+                </div>)}
+                {sending && <div className="chat-message from-vexon"><div className="chat-message-label">Vexon</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
+              </div>}
               <div className="composer">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask Vexon anything, or describe what you want to create..." rows={2} />
                 <div className="composer-bottom">
@@ -128,10 +169,10 @@ function App() {
                     <span className="tool-divider" />
                     <button className="mode-select" onClick={() => setMode(mode === 'Balanced' ? 'Deep think' : 'Balanced')}><WandSparkles size={14} /> {mode} <ChevronDown size={12} /></button>
                   </div>
-                  <button className="send-button" onClick={submitPrompt} disabled={!prompt.trim()} aria-label="Send prompt"><Send size={16} /></button>
+                  <button className="send-button" onClick={submitPrompt} disabled={!prompt.trim() || sending} aria-label="Send prompt">{sending ? <span className="send-spinner" /> : <Send size={16} />}</button>
                 </div>
               </div>
-              <div className="composer-hint"><span>↵</span> to send <span>⇧ ↵</span> for new line <i>•</i> Vexon keeps you in control</div>
+              <div className="composer-hint"><span>↵</span> to send <span>⇧ ↵</span> for new line <i>•</i> Free model · No paid fallback</div>
             </div>
             <div className="hero-orbit orbit-a" /><div className="hero-orbit orbit-b" />
             <div className="hero-symbol"><AudioLines size={30} /></div>
