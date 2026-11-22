@@ -21,7 +21,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
-  const token = process.env.VERCEL_OIDC_TOKEN;
+  // Vercel Functions expose the short-lived OIDC token on the incoming request header.
+  // The environment variable is available during builds/local development, not function runtime.
+  const token = req.headers?.['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
   if (!token) {
     return res.status(503).json({
       error: 'The free AI connection is not available on this deployment yet. No paid model was used.'
