@@ -1,6 +1,6 @@
 export const config = { runtime: 'nodejs' };
 
-const MODEL = 'nvidia/nemotron-3.5-lightning-free';
+const MODEL = 'openai/gpt-oss-20b';
 const MAX_MESSAGES = 12;
 const MAX_INPUT_CHARS = 12000;
 const MAX_OUTPUT_TOKENS = 1200;
@@ -21,12 +21,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
-  // Vercel Functions expose the short-lived OIDC token on the incoming request header.
-  // The environment variable is available during builds/local development, not function runtime.
-  const token = req.headers?.['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
-  if (!token) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
     return res.status(503).json({
-      error: 'The free AI connection is not available on this deployment yet. No paid model was used.'
+      error: 'VEXON AI is not connected yet. Add the Groq API key as GROQ_API_KEY in the Vercel Production environment. No paid provider was used.'
     });
   }
 
@@ -54,7 +52,9 @@ export default async function handler(req, res) {
   }
 
   const studio = typeof body.studio === 'string' ? body.studio.slice(0, 60) : 'AI Workspace';
-  const mode = body.mode === 'Deep think' ? 'Think carefully through the problem before answering, but provide only a useful concise explanation.' : 'Prioritize clear, direct, practical answers.';
+  const mode = body.mode === 'Deep think'
+    ? 'Think carefully through the problem before answering, but provide only a useful concise explanation.'
+    : 'Prioritize clear, direct, practical answers.';
   const system = [
     'You are Vexon, a helpful AI workspace assistant. Be accurate, useful, and transparent about uncertainty. Never claim to have browsed, executed code, or accessed files unless a tool actually did so.',
     studioGuidance[studio] || 'Help the user think clearly, create useful work, and execute practical next steps.',
@@ -63,16 +63,16 @@ export default async function handler(req, res) {
   ].join('\n\n');
 
   try {
-    const upstream = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+    const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: 'Bearer ' + token,
+        Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: system }, ...messages],
-        max_tokens: MAX_OUTPUT_TOKENS,
+        max_completion_tokens: MAX_OUTPUT_TOKENS,
         temperature: 0.6,
         stream: false
       }),
@@ -81,10 +81,15 @@ export default async function handler(req, res) {
 
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      console.error('Vexon free-model request failed:', upstream.status, result?.error?.code || result?.error?.type || 'gateway_error');
-      if (upstream.status === 429) return res.status(429).json({ error: 'The free model is temporarily rate-limited. Wait a little and try again.' });
-      if (upstream.status === 402 || upstream.status === 403) return res.status(503).json({ error: 'The free model is not currently available to this Vercel account. No paid model was used.' });
-      return res.status(502).json({ error: 'The free AI service is temporarily unavailable. No paid fallback was attempted.' });
+      const code = result?.error?.code || result?.error?.type || 'provider_error';
+      console.error('Vexon Groq free-tier request failed:', upstream.status, code);
+      if (upstream.status === 429) {
+        return res.status(429).json({ error: 'The Groq free-tier limit has been reached temporarily. Wait for the limit to reset and try again. No paid request was made.' });
+      }
+      if (upstream.status === 401 || upstream.status === 403) {
+        return res.status(503).json({ error: 'The Groq API key is invalid or does not have access. Check the GROQ_API_KEY setting. No paid provider was used.' });
+      }
+      return res.status(502).json({ error: 'The free AI provider is temporarily unavailable. No paid fallback was attempted.' });
     }
 
     const text = result?.choices?.[0]?.message?.content;
@@ -93,7 +98,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ text: text.trim(), model: MODEL });
   } catch (error) {
-    console.error('Vexon AI request error:', error?.name || 'request_error');
+    console.error('Vexon Groq request error:', error?.name || 'request_error');
     return res.status(504).json({ error: 'The free AI request timed out or could not connect. Please try again.' });
   }
 }
