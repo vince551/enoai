@@ -60,7 +60,7 @@ function App() {
     return oldMessages.length ? [makeConversation(oldMessages)] : [];
   });
   const [activeConversationId, setActiveConversationId] = useState(() => conversations[0]?.id || null);
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(() => conversations[0]?.projectId || null);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
