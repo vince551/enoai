@@ -35,8 +35,8 @@ function readJson(key, fallback) {
 
 function isImageGenerationRequest(value) {
   const text = String(value || '').trim();
-  return /\\b(?:generate|create|make|draw|render|produce|show)\\b.{0,55}\\b(?:an?\\s+)?(?:image|picture|illustration|artwork|photo|photograph)\\b/i.test(text)
-    || /\\b(?:image|picture|illustration|artwork|photo|photograph)\\b.{0,45}\\b(?:of|showing|depicting|featuring)\\b/i.test(text);
+  return /\b(?:generate|create|make|draw|render|produce|show)\b.{0,55}\b(?:an?\s+)?(?:image|picture|illustration|artwork|photo|photograph)\b/i.test(text)
+    || /\b(?:image|picture|illustration|artwork|photo|photograph)\b.{0,45}\b(?:of|showing|depicting|featuring)\b/i.test(text);
 }
 
 function makeConversation(messages = [], projectId = null, studio = 'AI Workspace') {
@@ -275,24 +275,42 @@ function App() {
     setNotice('VINCORA is generating a fresh version of this answer.');
     setShowNotice(true);
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
-          studio,
-          mode: activeConversation.mode || mode,
-          projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that answer.');
-      updateConversation(activeConversation.id, current => ({
-        ...current,
-        messages: current.messages.map(message => message.id === messageId ? { ...message, content: data.text, error: false, regeneratedAt: new Date().toISOString() } : message),
-        updatedAt: new Date().toISOString()
-      }));
-      setNotice('A fresh answer has replaced the previous version.');
+      if (isImageGenerationRequest(history[history.length - 1]?.content)) {
+        const response = await fetch('/api/media/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: history[history.length - 1].content, size: '1024x768', quality: 'standard' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that image.');
+        const mediaSrc = data.imageData || data.imageUrl;
+        if (!mediaSrc) throw new Error('The image provider returned no image.');
+        updateConversation(activeConversation.id, current => ({
+          ...current,
+          messages: current.messages.map(message => message.id === messageId ? { ...message, content: 'Here is a fresh version of your image.', mediaType: 'image', mediaSrc, error: false, regeneratedAt: new Date().toISOString() } : message),
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('A fresh image has been generated.');
+      } else {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
+            studio,
+            mode: activeConversation.mode || mode,
+            projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that answer.');
+        updateConversation(activeConversation.id, current => ({
+          ...current,
+          messages: current.messages.map(message => message.id === messageId ? { ...message, content: data.text, mediaType: undefined, mediaSrc: undefined, error: false, regeneratedAt: new Date().toISOString() } : message),
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('A fresh answer has replaced the previous version.');
+      }
     } catch (error) { setNotice(error.message); }
     finally { setShowNotice(true); setSending(false); }
   };
