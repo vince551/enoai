@@ -67,7 +67,7 @@ function App() {
   const [projectDescription, setProjectDescription] = useState('');
   const [projectSearch, setProjectSearch] = useState('');
   const [sending, setSending] = useState(false);
-  const [personalContext, setPersonalContext] = useState('');
+  const [personalContext, setPersonalContext] = useState(() => readJson('vincora-include-personal-context', false) ? readJson('vincora-personal-context', '') : '');
 
   const activeConversation = conversations.find(item => item.id === activeConversationId) || null;
   const messages = activeConversation?.messages || [];
