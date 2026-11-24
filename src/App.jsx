@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import WorkspaceFeatures from './WorkspaceFeatures.jsx';
+import FormattedMessage from './FormattedMessage.jsx';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3,
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
@@ -353,7 +354,7 @@ function App() {
                 <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() }))}>Clear this conversation</button></div>
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
-                  <div className="chat-message-content">{message.content}</div>
+                  <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <FormattedMessage content={message.content}/> : message.content}</div>
                 </div>)}
                 {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
               </div>}

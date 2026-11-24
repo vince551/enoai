@@ -148,3 +148,54 @@
 .memory-controls label{display:flex;align-items:center;gap:7px;color:#b8c4e0}
 .feature-status{font-size:10px;color:#a6b8ff;margin:10px 0}
 @media(max-width:800px){.feature-layout,.workflow-layout{grid-template-columns:1fr}.features-heading{margin:5px 0 18px}.features-heading h1{font-size:28px}.document-library{order:1}.editor-panel{order:2}.answer-import-row{align-items:flex-start;flex-direction:column}.answer-import-row small{max-width:260px}.memory-controls{align-items:flex-start;flex-direction:column}}
+
+
+/* VINCORA polished assistant response typography */
+.chat-thread{max-width:760px;max-height:560px;gap:14px;padding:15px}
+.chat-message.from-vincora{width:100%;max-width:100%;box-sizing:border-box;padding:13px 15px;background:linear-gradient(145deg,#141f32,#111a2a);border-color:#8da4ff1c;border-radius:12px}
+.chat-message.from-user{max-width:88%;padding:10px 13px}
+.chat-message-label{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.7px;text-transform:uppercase}
+.from-vincora .chat-message-label{color:#aebeff}
+.assistant-answer-content{white-space:normal;overflow-wrap:anywhere}
+.user-message-content{white-space:pre-wrap}
+.formatted-answer{max-width:100%;color:#dce4f4;font-size:13px;line-height:1.78;overflow-wrap:anywhere}
+.formatted-answer>*:first-child{margin-top:0}
+.formatted-answer>*:last-child{margin-bottom:0}
+.answer-heading{margin:22px 0 9px;color:#f0f3ff;font:750 16px/1.35 Manrope,sans-serif;letter-spacing:-.25px}
+.answer-heading-main{font-size:19px}
+.answer-subheading{margin:17px 0 7px;color:#e6ecff;font:700 13px/1.45 Manrope,sans-serif}
+.answer-paragraph{margin:0 0 12px;color:#d4dced;font-size:12px;line-height:1.8}
+.answer-paragraph strong,.formatted-answer li strong{color:#f2f5ff;font-weight:700}
+.formatted-answer em{color:#c5d0ed}
+.answer-list{display:grid;gap:7px;margin:8px 0 15px;padding-left:22px;color:#d3dced;font-size:12px;line-height:1.75}
+.answer-list li{padding-left:3px}
+.answer-list li::marker{color:#a7b8ff}
+.answer-list-ordered li::marker{font-weight:700}
+.answer-quote{margin:13px 0;padding:10px 13px;border-left:3px solid #8fa6ff;border-radius:0 8px 8px 0;background:#8fa6ff0c;color:#bdc9e5}
+.answer-quote p:last-child{margin-bottom:0}
+.answer-divider{height:1px;border:0;background:linear-gradient(90deg,#8fa6ff45,transparent);margin:18px 0}
+.answer-inline-code{padding:2px 5px;border:1px solid #9eb0e51c;border-radius:5px;background:#0a1220;color:#c8d5ff;font:11px/1.5 'SFMono-Regular',Consolas,monospace;overflow-wrap:anywhere}
+.answer-code-block{margin:12px 0 15px;border:1px solid #94a9df25;border-radius:9px;overflow:hidden;background:#080f1b}
+.answer-code-toolbar{height:31px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:#ffffff07;border-bottom:1px solid #ffffff10;color:#8493b4;font:9px 'SFMono-Regular',Consolas,monospace;text-transform:lowercase}
+.answer-code-toolbar button{display:flex;align-items:center;gap:5px;border:0;background:transparent;color:#aebce0;font:10px 'DM Sans',sans-serif}
+.answer-code-block pre{max-width:100%;overflow:auto;margin:0;padding:12px 13px;color:#dce6fa;font:11px/1.7 'SFMono-Regular',Consolas,monospace;tab-size:2}
+.answer-code-block pre code{font:inherit;white-space:pre}
+.answer-table-wrap{max-width:100%;overflow-x:auto;margin:12px 0 16px;border:1px solid #899cc626;border-radius:8px}
+.answer-table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.6;text-align:left}
+.answer-table th{background:#819aff12;color:#dfe7ff;font-weight:700}
+.answer-table th,.answer-table td{padding:9px 11px;border-bottom:1px solid #ffffff10;vertical-align:top}
+.answer-table td{color:#c8d3e9}
+.answer-table tr:last-child td{border-bottom:0}
+.formatted-answer a{color:#aebeff;text-decoration:underline;text-decoration-color:#aebeff55;text-underline-offset:3px}
+.formatted-answer a:hover{color:#e0e7ff}
+@media(max-width:760px){
+ .chat-thread{max-height:62vh;padding:9px;gap:10px}
+ .chat-message.from-vincora{padding:11px 10px}
+ .formatted-answer{font-size:12px;line-height:1.72}
+ .answer-heading{font-size:15px;margin-top:18px}
+ .answer-heading-main{font-size:17px}
+ .answer-subheading{font-size:12px}
+ .answer-paragraph,.answer-list{font-size:11px}
+ .answer-code-block pre{font-size:10px;padding:10px}
+ .answer-table{min-width:420px}
+}
