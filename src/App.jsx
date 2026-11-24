@@ -146,7 +146,7 @@ function App() {
     const existing = conversations.find(item => item.id === conversationId);
     const base = existing || makeConversation([], selectedProjectId, active === 'Overview' ? 'AI Workspace' : active);
     const nextMessages = [...base.messages, { role: 'user', content: text, id: Date.now() }];
-    const nextConversation = { ...base, id: conversationId, projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
+    const nextConversation = { ...base, id: conversationId, title: existing?.title || (text.slice(0, 58) + (text.length > 58 ? '…' : '')), projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
     setConversations(current => existing
       ? current.map(item => item.id === conversationId ? nextConversation : item)
       : [nextConversation, ...current]);
