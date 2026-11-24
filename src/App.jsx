@@ -33,6 +33,13 @@ function readJson(key, fallback) {
   } catch { return fallback; }
 }
 
+function isVideoGenerationRequest(value) {
+  const text = String(value || '').trim();
+  const action = /\b(?:generate|create|make|produce|render|animate)\b/i.test(text);
+  const subject = /\b(?:video|clip|movie|animation|animated scene|motion sequence|text.to.video)\b/i.test(text);
+  return (action && subject) || /^\s*(?:video|animate)\b/i.test(text);
+}
+
 function isImageGenerationRequest(value) {
   const text = String(value || '').trim();
   const visualAction = /\b(?:generate|create|make|draw|render|produce|paint|illustrate)\b/i.test(text);
@@ -200,6 +207,59 @@ function App() {
           updatedAt: new Date().toISOString()
         }));
         setNotice('Image generated using the configured free provider. No paid fallback was used.');
+      } else if (isVideoGenerationRequest(text)) {
+        setNotice('VINCORA is submitting your video to Agnes Video 2.5 Flash…');
+        const createResponse = await fetch('/api/media/video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, ratio: '16:9', seconds: '5' })
+        });
+        const created = await createResponse.json().catch(() => ({}));
+        if (!createResponse.ok) throw new Error(created.error || 'VINCORA could not submit that video request.');
+        const videoMessageId = Date.now() + 1;
+        updateConversation(conversationId, current => ({
+          ...current,
+          messages: [...current.messages, {
+            role: 'assistant',
+            content: 'Your video is processing with Agnes Video 2.5 Flash. This may take several minutes.',
+            mediaType: 'video',
+            mediaStatus: 'processing',
+            id: videoMessageId
+          }],
+          updatedAt: new Date().toISOString()
+        }));
+        let videoReady = false;
+        for (let attempt = 0; attempt < 60; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          const statusResponse = await fetch('/api/media/video-status?videoId=' + encodeURIComponent(created.videoId), { cache: 'no-store' });
+          const statusData = await statusResponse.json().catch(() => ({}));
+          if (!statusResponse.ok) throw new Error(statusData.error || 'Could not check video generation progress.');
+          if (statusData.status === 'failed') throw new Error(statusData.error || 'Agnes could not generate this video.');
+          if (statusData.status === 'completed' && statusData.videoUrl) {
+            updateConversation(conversationId, current => ({
+              ...current,
+              messages: current.messages.map(message => message.id === videoMessageId
+                ? { ...message, content: 'Your video is ready.', mediaStatus: 'completed', mediaSrc: statusData.videoUrl }
+                : message),
+              updatedAt: new Date().toISOString()
+            }));
+            videoReady = true;
+            break;
+          }
+          setNotice('Your video is processing… ' + (attempt + 1) + '/60 checks completed.');
+        }
+        if (!videoReady) {
+          updateConversation(conversationId, current => ({
+            ...current,
+            messages: current.messages.map(message => message.id === videoMessageId
+              ? { ...message, content: 'Your video is still processing upstream. It was submitted successfully, but this chat stopped waiting after 10 minutes. You can retry the prompt later.', mediaStatus: 'timeout' }
+              : message),
+            updatedAt: new Date().toISOString()
+          }));
+          setNotice('The video is still processing upstream. No paid fallback was used.');
+        } else {
+          setNotice('Video generated successfully with Agnes Video 2.5 Flash. No paid fallback was used.');
+        }
       } else {
         const response = await fetch('/api/chat', {
           method: 'POST',
@@ -493,7 +553,7 @@ function App() {
                 <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => { if (window.confirm('Clear all messages in this conversation? This cannot be undone.')) updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() })); }}>Clear conversation</button></div>
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
-                  <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <><FormattedMessage content={message.content}/>{message.mediaType === 'image' && message.mediaSrc && <div className="chat-generated-media"><a href={message.mediaSrc} target="_blank" rel="noreferrer noopener" download="vincora-generated-image.png"><img src={message.mediaSrc} alt="Image generated by VINCORA from your prompt" loading="lazy"/></a><a className="chat-media-download" href={message.mediaSrc} download="vincora-generated-image.png">Download image</a></div>}</> : message.content}</div>
+                  <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <><FormattedMessage content={message.content}/>{message.mediaType === 'image' && message.mediaSrc && <div className="chat-generated-media"><a href={message.mediaSrc} target="_blank" rel="noreferrer noopener" download="vincora-generated-image.png"><img src={message.mediaSrc} alt="Image generated by VINCORA from your prompt" loading="lazy"/></a><a className="chat-media-download" href={message.mediaSrc} download="vincora-generated-image.png">Download image</a></div>}{message.mediaType === 'video' && message.mediaStatus === 'processing' && <div className="chat-generated-media chat-video-pending"><span>Video generation is in progress. VINCORA is checking Agnes for the finished file.</span></div>}{message.mediaType === 'video' && message.mediaSrc && <div className="chat-generated-media chat-generated-video"><video src={message.mediaSrc} controls playsInline preload="metadata"/><a className="chat-media-download" href={message.mediaSrc} target="_blank" rel="noreferrer noopener" download="vincora-generated-video.mp4">Download video</a></div>}</> : message.content}</div>
                   {message.role === 'assistant' && <div className="message-actions">
                     {!message.error && <>
                       <button type="button" onClick={() => copyAnswer(message.content)} title="Copy answer"><Copy size={13}/> <span>Copy</span></button>
