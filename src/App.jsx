@@ -35,7 +35,10 @@ function readJson(key, fallback) {
 
 function isImageGenerationRequest(value) {
   const text = String(value || '').trim();
-  return /\b(?:generate|create|make|draw|render|produce|show)\b.{0,55}\b(?:an?\s+)?(?:image|picture|illustration|artwork|photo|photograph)\b/i.test(text)
+  const visualAction = /\b(?:generate|create|make|draw|render|produce|paint|illustrate)\b/i.test(text);
+  const explicitVisual = /\b(?:image|picture|illustration|artwork|photo|photograph|logo|poster|portrait|wallpaper|icon|graphic|sketch|painting|infographic)\b/i.test(text);
+  const visualSubject = /\b(?:photorealistic|photo-realistic|hyperrealistic|realistic\s+(?:image|view|scene|render|picture)|cinematic\s+(?:view|scene|render)|landscape|cityscape|skyline|seascape|architecture\s+render|concept\s+art|digital\s+art)\b/i.test(text);
+  return (visualAction && (explicitVisual || visualSubject))
     || /\b(?:image|picture|illustration|artwork|photo|photograph)\b.{0,45}\b(?:of|showing|depicting|featuring)\b/i.test(text);
 }
 
