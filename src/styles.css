@@ -199,3 +199,34 @@
  .answer-code-block pre{font-size:10px;padding:10px}
  .answer-table{min-width:420px}
 }
+
+
+/* Keep the conversation inside the available workspace width */
+.hero-content{width:100%;max-width:860px;min-width:0}
+.chat-thread{width:100%;max-width:100%;min-width:0;max-height:min(58vh,560px);overflow-x:hidden;overscroll-behavior:contain}
+.chat-thread-head{min-width:0;gap:10px}
+.chat-thread-head>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-thread-head button{flex-shrink:0}
+.chat-message{width:fit-content;min-width:0;max-width:100%;overflow:hidden}
+.chat-message.from-vincora{width:100%;max-width:100%}
+.chat-message.from-user{max-width:min(88%,680px)}
+.chat-message-content,.assistant-answer-content,.formatted-answer{width:100%;min-width:0;max-width:100%}
+.formatted-answer :where(p,li,blockquote,th,td){overflow-wrap:anywhere}
+.answer-code-block,.answer-table-wrap{width:100%;min-width:0;max-width:100%}
+.answer-code-block pre{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.answer-table-wrap{overflow-x:auto;overscroll-behavior-x:contain}
+@media(max-width:760px){
+ .hero-content{max-width:100%}
+ .chat-thread{max-height:56vh;padding:9px;gap:9px}
+ .chat-message.from-user{max-width:94%}
+ .chat-message.from-vincora{width:100%}
+ .chat-message{padding:10px}
+ .chat-thread-head{align-items:flex-start}
+ .chat-thread-head button{font-size:9px}
+}
+@media(max-width:390px){
+ .chat-thread{padding:7px}
+ .chat-message.from-user{max-width:100%}
+ .chat-message.from-vincora{padding:9px 8px}
+ .formatted-answer{font-size:11px}
+}
