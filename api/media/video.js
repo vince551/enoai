@@ -41,14 +41,19 @@ export default async function handler(req, res) {
     });
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      console.error('VINCORA video provider error:', upstream.status, result?.error?.code || result?.error?.type || 'provider_error');
+      const providerCode = result?.code || result?.error?.code || result?.error?.type || 'provider_error';
+      const providerMessage = String(result?.message || result?.error?.message || '').slice(0, 240);
+      console.error('VINCORA video provider error:', upstream.status, providerCode);
       const status = upstream.status === 429 ? 429 : (upstream.status === 401 || upstream.status === 403 ? 503 : 502);
+      const queueFull = upstream.status === 503 && /queue|busy|full/i.test(providerCode + ' ' + providerMessage);
       return res.status(status).json({
-        error: upstream.status === 429
-          ? 'The free video queue is busy or its rate limit has been reached. Wait before retrying. No paid fallback was used.'
-          : upstream.status === 401 || upstream.status === 403
-            ? 'The Agnes API key is invalid or does not have access to the free video model. Check your account and AGNES_API_KEY. No paid fallback was used.'
-            : 'The free video provider rejected this request. No paid fallback was used.'
+        error: queueFull
+          ? 'Agnes free video queue is currently full (503). No video task was created. Please retry later. No paid fallback was used.'
+          : upstream.status === 429
+            ? 'The free video queue is busy or its rate limit has been reached. Wait before retrying. No paid fallback was used.'
+            : upstream.status === 401 || upstream.status === 403
+              ? 'The Agnes API key is invalid or does not have access to the free video model. Check your account and AGNES_API_KEY. No paid fallback was used.'
+              : 'The free video provider rejected this request (HTTP ' + upstream.status + '). No paid fallback was used.'
       });
     }
 
