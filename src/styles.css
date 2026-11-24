@@ -24,3 +24,7 @@
 @keyframes vexon-spin{to{transform:rotate(360deg)}}
 @media(max-width:760px){.chat-thread{max-height:330px;padding:9px}.chat-message{max-width:100%}.chat-message-content{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.chat-typing span,.send-spinner{animation:none}}
+
+
+/* VINCORA brand mark */
+.brand-glyph{font:800 22px/1 Manrope,sans-serif;letter-spacing:-2px;color:#fff;transform:translateX(-1px)}
