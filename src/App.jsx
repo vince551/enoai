@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WorkspaceFeatures from './WorkspaceFeatures.jsx';
+import MediaStudio from './MediaStudio.jsx';
 import FormattedMessage from './FormattedMessage.jsx';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3,
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
   Code2, Command, Compass, FileText, FolderKanban, Globe2, GraduationCap,
-  LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send,
+  LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send, ImagePlus,
   Settings2, Sparkles, WandSparkles, X, Zap, Archive, FolderPlus, Save,
   ArrowLeft, Clock3, MoreHorizontal, ShieldCheck, Copy, Download, RefreshCw, ThumbsUp, ThumbsDown
 } from 'lucide-react';
@@ -296,7 +297,8 @@ function App() {
             { label: 'My Projects', icon: FolderKanban },
             { label: 'Creation Centre', icon: FileText },
             { label: 'Workflows', icon: Activity },
-            { label: 'Memory & Context', icon: ShieldCheck }
+            { label: 'Memory & Context', icon: ShieldCheck },
+            { label: 'Image & Video Studio', icon: ImagePlus }
           ].map(({ label, icon: Icon }) => (
             <button key={label} className={active === label || (label === 'My Projects' && active === 'Project Detail') ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileNav(false); }}>
               <Icon size={17} /><span>{label}</span>{label === 'My Projects' && <span className="nav-count">{projects.filter(project => !project.archived).length}</span>}
@@ -346,7 +348,7 @@ function App() {
         </header>
 
         <div className="content-wrap">
-          {['Creation Centre', 'Workflows', 'Memory & Context'].includes(active) ? <WorkspaceFeatures active={active} conversations={conversations} projects={projects} onContextChange={setPersonalContext} onUseWorkflowPrompt={workflowPrompt => { setActive('AI Workspace'); setPrompt(workflowPrompt); setActiveConversationId(null); setSelectedProjectId(null); }} /> : active === 'My Projects' || active === 'Project Detail' ? (
+          {active === 'Image & Video Studio' ? <MediaStudio /> : ['Creation Centre', 'Workflows', 'Memory & Context'].includes(active) ? <WorkspaceFeatures active={active} conversations={conversations} projects={projects} onContextChange={setPersonalContext} onUseWorkflowPrompt={workflowPrompt => { setActive('AI Workspace'); setPrompt(workflowPrompt); setActiveConversationId(null); setSelectedProjectId(null); }} /> : active === 'My Projects' || active === 'Project Detail' ? (
             <section className="projects-page">
               <div className="projects-page-heading">
                 <div>
