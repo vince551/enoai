@@ -29,7 +29,7 @@
       </div>
     </div>
     <script>
-      window.__vexonShowBootError = function (message) {
+      window.__vincoraShowBootError = function (message) {
         var root = document.getElementById('root');
         if (!root) return;
         root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand">VINCORA<span> AI</span></div><div class="boot-title">VINCORA could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
@@ -37,10 +37,10 @@
         if (detail) detail.textContent = String(message || 'Unknown startup error');
       };
       window.addEventListener('error', function (event) {
-        if (event && (event.error || event.message)) window.__vexonShowBootError(event.message || event.error);
+        if (event && (event.error || event.message)) window.__vincoraShowBootError(event.message || event.error);
       });
       window.addEventListener('unhandledrejection', function (event) {
-        window.__vexonShowBootError(event.reason && (event.reason.stack || event.reason.message) || event.reason || 'Unhandled promise rejection');
+        window.__vincoraShowBootError(event.reason && (event.reason.stack || event.reason.message) || event.reason || 'Unhandled promise rejection');
       });
     </script>
     <script type="module" src="/src/main.jsx"></script>
