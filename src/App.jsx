@@ -59,7 +59,7 @@ function App() {
     const oldMessages = Array.isArray(current) ? current : (Array.isArray(legacy) ? legacy : []);
     return oldMessages.length ? [makeConversation(oldMessages)] : [];
   });
-  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [activeConversationId, setActiveConversationId] = useState(() => conversations[0]?.id || null);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectName, setProjectName] = useState('');
@@ -91,6 +91,7 @@ function App() {
 
   const startNewConversation = () => {
     setActiveConversationId(null);
+    setSelectedProjectId(null);
     setActive('AI Workspace');
     setPrompt('');
     setMobileNav(false);
@@ -145,7 +146,7 @@ function App() {
     const existing = conversations.find(item => item.id === conversationId);
     const base = existing || makeConversation([], selectedProjectId, active === 'Overview' ? 'AI Workspace' : active);
     const nextMessages = [...base.messages, { role: 'user', content: text, id: Date.now() }];
-    const nextConversation = { ...base, projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
+    const nextConversation = { ...base, id: conversationId, projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
     setConversations(current => existing
       ? current.map(item => item.id === conversationId ? nextConversation : item)
       : [nextConversation, ...current]);
@@ -259,7 +260,7 @@ function App() {
               <div className="projects-page-heading">
                 <div>
                   <div className="eyebrow"><span className="eyebrow-dot" /> YOUR WORKSPACE</div>
-                  <h1>{active === 'Project Detail' && selectedProject ? selectedProject.name : 'Your projects.'}</h1>
+                  {active === 'Project Detail' && selectedProject ? <input className="project-name-input" aria-label="Project name" value={selectedProject.name} onChange={event => updateProject(selectedProject.id, { name: event.target.value })} maxLength={80}/> : <h1>Your projects.</h1>}
                   <p className="welcome-copy">{active === 'Project Detail' ? 'Keep your goals, context and conversations together.' : 'Organise ongoing work and pick up exactly where you left off.'}</p>
                 </div>
                 <div className="project-page-actions">
