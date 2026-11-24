@@ -98,7 +98,7 @@ function App() {
     try {
       localStorage.setItem('vincora-conversations', JSON.stringify(conversations, (key, value) => key === 'mediaSrc' && typeof value === 'string' && value.startsWith('data:') ? undefined : value));
       const latestLegacyThread = conversations.find(item => item.id === activeConversationId) || conversations[0];
-      if (latestLegacyThread) localStorage.setItem('vincora-chat-messages', JSON.stringify(latestLegacyThread.messages.slice(-80)));
+      if (latestLegacyThread) localStorage.setItem('vincora-chat-messages', JSON.stringify(latestLegacyThread.messages.slice(-80), (key, value) => key === 'mediaSrc' && typeof value === 'string' && value.startsWith('data:') ? undefined : value));
     } catch { setNotice('This browser could not save conversation history.'); setShowNotice(true); }
   }, [conversations, activeConversationId]);
 
