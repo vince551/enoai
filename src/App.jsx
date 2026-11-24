@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import WorkspaceFeatures from './WorkspaceFeatures.jsx';
 import FormattedMessage from './FormattedMessage.jsx';
 import {
@@ -7,7 +7,7 @@ import {
   Code2, Command, Compass, FileText, FolderKanban, Globe2, GraduationCap,
   LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send,
   Settings2, Sparkles, WandSparkles, X, Zap, Archive, FolderPlus, Save,
-  ArrowLeft, Clock3, MoreHorizontal, ShieldCheck
+  ArrowLeft, Clock3, MoreHorizontal, ShieldCheck, Copy, Download, RefreshCw
 } from 'lucide-react';
 
 const modules = [
@@ -68,12 +68,18 @@ function App() {
   const [projectDescription, setProjectDescription] = useState('');
   const [projectSearch, setProjectSearch] = useState('');
   const [sending, setSending] = useState(false);
+  const chatEndRef = useRef(null);
   const [personalContext, setPersonalContext] = useState(() => readJson('vincora-include-personal-context', false) ? readJson('vincora-personal-context', '') : '');
 
   const activeConversation = conversations.find(item => item.id === activeConversationId) || null;
   const messages = activeConversation?.messages || [];
   const selectedProject = projects.find(item => item.id === selectedProjectId) || null;
   const projectConversations = conversations.filter(item => item.projectId === selectedProjectId);
+  const recentConversations = conversations.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 6);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages.length, sending, activeConversationId]);
 
   useEffect(() => {
     try { localStorage.setItem('vincora-projects', JSON.stringify(projects)); }
@@ -149,7 +155,7 @@ function App() {
     const existing = conversations.find(item => item.id === conversationId);
     const base = existing || makeConversation([], selectedProjectId, active === 'Overview' ? 'AI Workspace' : active);
     const nextMessages = [...base.messages, { role: 'user', content: text, id: Date.now() }];
-    const nextConversation = { ...base, id: conversationId, title: existing?.title || (text.slice(0, 58) + (text.length > 58 ? '…' : '')), projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
+    const nextConversation = { ...base, id: conversationId, title: existing?.title || (text.slice(0, 58) + (text.length > 58 ? '…' : '')), projectId: base.projectId || selectedProjectId, studio: active, mode, messages: nextMessages, updatedAt: new Date().toISOString() };
     setConversations(current => existing
       ? current.map(item => item.id === conversationId ? nextConversation : item)
       : [nextConversation, ...current]);
@@ -189,6 +195,61 @@ function App() {
     } finally {
       setSending(false);
     }
+  };
+
+  const copyAnswer = async (content) => {
+    try { await navigator.clipboard.writeText(content); setNotice('Answer copied to clipboard.'); }
+    catch { setNotice('Clipboard access was unavailable in this browser.'); }
+    setShowNotice(true);
+  };
+
+  const exportAnswer = (content, format) => {
+    const extension = format === 'markdown' ? 'md' : 'txt';
+    const mime = format === 'markdown' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+    const url = URL.createObjectURL(new Blob([content], { type: mime }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'vincora-answer.' + extension;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const regenerateResponse = async (messageId) => {
+    if (sending || !activeConversation) return;
+    const targetIndex = activeConversation.messages.findIndex(message => message.id === messageId);
+    if (targetIndex < 0 || activeConversation.messages[targetIndex].role !== 'assistant') return;
+    let userIndex = targetIndex - 1;
+    while (userIndex >= 0 && activeConversation.messages[userIndex].role !== 'user') userIndex -= 1;
+    if (userIndex < 0) return;
+    const history = activeConversation.messages.slice(0, userIndex + 1);
+    const project = projects.find(item => item.id === activeConversation.projectId);
+    const studio = activeConversation.studio || 'AI Workspace';
+    setSending(true);
+    setNotice('VINCORA is generating a fresh version of this answer.');
+    setShowNotice(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
+          studio,
+          mode: activeConversation.mode || mode,
+          projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that answer.');
+      updateConversation(activeConversation.id, current => ({
+        ...current,
+        messages: current.messages.map(message => message.id === messageId ? { ...message, content: data.text, error: false, regeneratedAt: new Date().toISOString() } : message),
+        updatedAt: new Date().toISOString()
+      }));
+      setNotice('A fresh answer has replaced the previous version.');
+    } catch (error) { setNotice(error.message); }
+    finally { setShowNotice(true); setSending(false); }
   };
 
   const selectModule = (item) => {
@@ -237,6 +298,17 @@ function App() {
             </button>
           ))}
         </nav>
+        {recentConversations.length > 0 && <div className="recent-chats">
+          <div className="nav-label recent-chats-label">RECENT CHATS</div>
+          {recentConversations.map(conversation => <button key={conversation.id} className={activeConversationId === conversation.id ? 'recent-chat active' : 'recent-chat'} onClick={() => {
+            setActiveConversationId(conversation.id);
+            setSelectedProjectId(conversation.projectId || null);
+            setActive(conversation.studio || 'AI Workspace');
+            setMobileNav(false);
+          }} title={conversation.title}>
+            <MessageSquare size={14}/><span>{conversation.title || 'Untitled conversation'}</span>
+          </button>)}
+        </div>}
         <div className="sidebar-bottom">
           <div className="usage-card">
             <div className="usage-top"><span>Monthly usage</span><span>0%</span></div>
@@ -351,12 +423,21 @@ function App() {
               <h2>What are we <span>working on</span><br className="desktop-break" /> today?</h2>
               <p>From a quick question to a full project, bring your next idea here.</p>
               {messages.length > 0 && <div className="chat-thread" aria-live="polite">
-                <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() }))}>Clear this conversation</button></div>
+                <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => { if (window.confirm('Clear all messages in this conversation? This cannot be undone.')) updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() })); }}>Clear conversation</button></div>
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
                   <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <FormattedMessage content={message.content}/> : message.content}</div>
+                  {message.role === 'assistant' && <div className="message-actions">
+                    {!message.error && <>
+                      <button type="button" onClick={() => copyAnswer(message.content)} title="Copy answer"><Copy size={13}/> <span>Copy</span></button>
+                      <button type="button" onClick={() => exportAnswer(message.content, 'markdown')} title="Export Markdown"><Download size={13}/> <span>Markdown</span></button>
+                      <button type="button" onClick={() => exportAnswer(message.content, 'text')} title="Export plain text"><FileText size={13}/> <span>Text</span></button>
+                    </>}
+                    <button type="button" onClick={() => regenerateResponse(message.id)} disabled={sending} title={message.error ? 'Retry response' : 'Regenerate answer'}><RefreshCw size={13}/> <span>{message.error ? 'Retry' : 'Regenerate'}</span></button>
+                  </div>}
                 </div>)}
                 {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
+                <div ref={chatEndRef} />
               </div>}
               <div className="composer">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask VINCORA anything, or describe what you want to create..." rows={2} />
