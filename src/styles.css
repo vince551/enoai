@@ -252,3 +252,6 @@
 }
 @media(max-width:390px){.message-actions button span{font-size:8px}.message-actions button{gap:4px;padding-inline:5px}.composer-hint{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.chat-thread{scroll-behavior:auto}.message-actions button{transition:none}}
+
+/* Helpful response feedback state */
+.message-actions button.feedback-selected{border-color:#8fa6ff55;background:#8fa6ff18;color:#cbd7ff}
