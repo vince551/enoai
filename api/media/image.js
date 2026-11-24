@@ -18,12 +18,12 @@ function getDimensions(ratio) {
 }
 
 function improvePrompt(prompt) {
-  const realism = /\\b(?:photorealistic|photo-realistic|hyperrealistic|realistic|lifelike|true[- ]to[- ]life|professional photography|editorial photography|architectural photography)\\b/i.test(prompt);
+  const realism = /\b(?:photorealistic|photo-realistic|hyperrealistic|realistic|lifelike|true[- ]to[- ]life|professional photography|editorial photography|architectural photography)\b/i.test(prompt);
   const qualityDirection = 'Create a polished, high-quality image with a clear focal subject, intentional composition, coherent perspective, accurate proportions, natural textures, clean edges, balanced lighting, realistic shadows, and refined colour grading. Avoid visual clutter, malformed details, distorted geometry, excessive sharpening, and artificial-looking surfaces. Do not add text, logos, or watermarks unless requested.';
   const photoDirection = realism
     ? ' Make it read as a genuine photograph rather than a 3D render or illustration, with physically plausible materials, natural light falloff, authentic surface detail, believable scale, and subtle camera characteristics.'
     : '';
-  return prompt + '\\n\\n' + qualityDirection + photoDirection;
+  return prompt + '\n\n' + qualityDirection + photoDirection;
 }
 
 function getProviderError(result) {
