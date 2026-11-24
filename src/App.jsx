@@ -158,11 +158,11 @@ function App() {
               <p>From a quick question to a full project, bring your next idea here.</p>
               {messages.length > 0 && <div className="chat-thread" aria-live="polite">
                 <div className="chat-thread-head"><span>Conversation</span><button onClick={() => setMessages([])}>Clear chat</button></div>
-                {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-VINCORA')} key={message.id}>
+                {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
                   <div className="chat-message-content">{message.content}</div>
                 </div>)}
-                {sending && <div className="chat-message from-VINCORA"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
+                {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
               </div>}
               <div className="composer">
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask VINCORA anything, or describe what you want to create..." rows={2} />
@@ -210,7 +210,7 @@ function App() {
             </div>
           </section>
 
-          <footer className="footer"><span>© 2026 VINCORA AI</span><span>Built for ideas that move forward.</span><a href="mailto:hello@VINCORA.ai">Contact support <ArrowUpRight size={12} /></a></footer>
+          <footer className="footer"><span>© 2026 VINCORA AI</span><span>Built for ideas that move forward.</span><a href="mailto:hello@vexon.ai">Contact support <ArrowUpRight size={12} /></a></footer>
         </div>
       </main>
     </div>
