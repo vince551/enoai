@@ -255,3 +255,37 @@
 
 /* Helpful response feedback state */
 .message-actions button.feedback-selected{border-color:#8fa6ff55;background:#8fa6ff18;color:#cbd7ff}
+
+
+/* Fix narrow-screen Markdown tables: preserve whole words and scroll the table, not its text. */
+.answer-table-wrap{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+}
+.answer-table{
+  width:100%;
+  min-width:560px;
+  table-layout:auto;
+}
+.answer-table th,
+.answer-table td{
+  min-width:150px;
+  white-space:normal;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+}
+.answer-table th:first-child,
+.answer-table td:first-child{
+  min-width:110px;
+}
+@media(max-width:760px){
+  .answer-table{min-width:560px}
+  .answer-table th,.answer-table td{padding:9px 11px}
+}
