@@ -427,11 +427,13 @@ function App() {
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
                   <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <FormattedMessage content={message.content}/> : message.content}</div>
-                  {message.role === 'assistant' && !message.error && <div className="message-actions">
-                    <button type="button" onClick={() => copyAnswer(message.content)} title="Copy answer"><Copy size={13}/> <span>Copy</span></button>
-                    <button type="button" onClick={() => exportAnswer(message.content, 'markdown')} title="Export Markdown"><Download size={13}/> <span>Markdown</span></button>
-                    <button type="button" onClick={() => exportAnswer(message.content, 'text')} title="Export plain text"><FileText size={13}/> <span>Text</span></button>
-                    <button type="button" onClick={() => regenerateResponse(message.id)} disabled={sending} title="Regenerate answer"><RefreshCw size={13}/> <span>Regenerate</span></button>
+                  {message.role === 'assistant' && <div className="message-actions">
+                    {!message.error && <>
+                      <button type="button" onClick={() => copyAnswer(message.content)} title="Copy answer"><Copy size={13}/> <span>Copy</span></button>
+                      <button type="button" onClick={() => exportAnswer(message.content, 'markdown')} title="Export Markdown"><Download size={13}/> <span>Markdown</span></button>
+                      <button type="button" onClick={() => exportAnswer(message.content, 'text')} title="Export plain text"><FileText size={13}/> <span>Text</span></button>
+                    </>}
+                    <button type="button" onClick={() => regenerateResponse(message.id)} disabled={sending} title={message.error ? 'Retry response' : 'Regenerate answer'}><RefreshCw size={13}/> <span>{message.error ? 'Retry' : 'Regenerate'}</span></button>
                   </div>}
                 </div>)}
                 {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
