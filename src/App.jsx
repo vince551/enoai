@@ -33,6 +33,12 @@ function readJson(key, fallback) {
   } catch { return fallback; }
 }
 
+function isImageGenerationRequest(value) {
+  const text = String(value || '').trim();
+  return /\b(?:generate|create|make|draw|render|produce|show)\b.{0,55}\b(?:an?\s+)?(?:image|picture|illustration|artwork|photo|photograph)\b/i.test(text)
+    || /\b(?:image|picture|illustration|artwork|photo|photograph)\b.{0,45}\b(?:of|showing|depicting|featuring)\b/i.test(text);
+}
+
 function makeConversation(messages = [], projectId = null, studio = 'AI Workspace') {
   const firstPrompt = messages.find(message => message.role === 'user')?.content || 'New conversation';
   return {
@@ -90,7 +96,7 @@ function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('vincora-conversations', JSON.stringify(conversations));
+      localStorage.setItem('vincora-conversations', JSON.stringify(conversations, (key, value) => key === 'mediaSrc' && typeof value === 'string' && value.startsWith('data:') ? undefined : value));
       const latestLegacyThread = conversations.find(item => item.id === activeConversationId) || conversations[0];
       if (latestLegacyThread) localStorage.setItem('vincora-chat-messages', JSON.stringify(latestLegacyThread.messages.slice(-80)));
     } catch { setNotice('This browser could not save conversation history.'); setShowNotice(true); }
@@ -168,24 +174,49 @@ function App() {
     setNotice('VINCORA is preparing your response with its free model.');
     setShowNotice(true);
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })),
-          studio: active,
-          mode,
-          projectContext: [selectedProject?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'VINCORA could not complete that request.');
-      updateConversation(conversationId, current => ({
-        ...current,
-        messages: [...current.messages, { role: 'assistant', content: data.text, id: Date.now() + 1 }],
-        updatedAt: new Date().toISOString()
-      }));
-      setNotice('Response generated using VINCORA’s free AI model.');
+      if (isImageGenerationRequest(text)) {
+        setNotice('VINCORA is creating your image…');
+        const response = await fetch('/api/media/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, size: '1024x768', quality: 'standard' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not generate that image.');
+        const mediaSrc = data.imageData || data.imageUrl;
+        if (!mediaSrc) throw new Error('The image provider returned no image.');
+        updateConversation(conversationId, current => ({
+          ...current,
+          messages: [...current.messages, {
+            role: 'assistant',
+            content: 'Your image is ready. Tap it to open or save it.',
+            mediaType: 'image',
+            mediaSrc,
+            id: Date.now() + 1
+          }],
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('Image generated using the configured free provider. No paid fallback was used.');
+      } else {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })),
+            studio: active,
+            mode,
+            projectContext: [selectedProject?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not complete that request.');
+        updateConversation(conversationId, current => ({
+          ...current,
+          messages: [...current.messages, { role: 'assistant', content: data.text, id: Date.now() + 1 }],
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('Response generated using VINCORA’s free AI model.');
+      }
       setShowNotice(true);
     } catch (error) {
       updateConversation(conversationId, current => ({
@@ -244,24 +275,42 @@ function App() {
     setNotice('VINCORA is generating a fresh version of this answer.');
     setShowNotice(true);
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
-          studio,
-          mode: activeConversation.mode || mode,
-          projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that answer.');
-      updateConversation(activeConversation.id, current => ({
-        ...current,
-        messages: current.messages.map(message => message.id === messageId ? { ...message, content: data.text, error: false, regeneratedAt: new Date().toISOString() } : message),
-        updatedAt: new Date().toISOString()
-      }));
-      setNotice('A fresh answer has replaced the previous version.');
+      if (isImageGenerationRequest(history[history.length - 1]?.content)) {
+        const response = await fetch('/api/media/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: history[history.length - 1].content, size: '1024x768', quality: 'standard' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that image.');
+        const mediaSrc = data.imageData || data.imageUrl;
+        if (!mediaSrc) throw new Error('The image provider returned no image.');
+        updateConversation(activeConversation.id, current => ({
+          ...current,
+          messages: current.messages.map(message => message.id === messageId ? { ...message, content: 'Here is a fresh version of your image.', mediaType: 'image', mediaSrc, error: false, regeneratedAt: new Date().toISOString() } : message),
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('A fresh image has been generated.');
+      } else {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
+            studio,
+            mode: activeConversation.mode || mode,
+            projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not regenerate that answer.');
+        updateConversation(activeConversation.id, current => ({
+          ...current,
+          messages: current.messages.map(message => message.id === messageId ? { ...message, content: data.text, mediaType: undefined, mediaSrc: undefined, error: false, regeneratedAt: new Date().toISOString() } : message),
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('A fresh answer has replaced the previous version.');
+      }
     } catch (error) { setNotice(error.message); }
     finally { setShowNotice(true); setSending(false); }
   };
@@ -441,7 +490,7 @@ function App() {
                 <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => { if (window.confirm('Clear all messages in this conversation? This cannot be undone.')) updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() })); }}>Clear conversation</button></div>
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
-                  <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <FormattedMessage content={message.content}/> : message.content}</div>
+                  <div className={"chat-message-content " + (message.role === "assistant" ? "assistant-answer-content" : "user-message-content")}>{message.role === "assistant" && !message.error ? <><FormattedMessage content={message.content}/>{message.mediaType === 'image' && message.mediaSrc && <div className="chat-generated-media"><a href={message.mediaSrc} target="_blank" rel="noreferrer noopener" download="vincora-generated-image.png"><img src={message.mediaSrc} alt="Image generated by VINCORA from your prompt" loading="lazy"/></a><a className="chat-media-download" href={message.mediaSrc} download="vincora-generated-image.png">Download image</a></div>}</> : message.content}</div>
                   {message.role === 'assistant' && <div className="message-actions">
                     {!message.error && <>
                       <button type="button" onClick={() => copyAnswer(message.content)} title="Copy answer"><Copy size={13}/> <span>Copy</span></button>
