@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#090d18" />
-    <meta name="description" content="Vexon — turn ideas into outcomes with AI." />
-    <title>Vexon — Your AI workspace</title>
+    <link rel="icon" type="image/svg+xml" href="/vincora-mark.svg" />
+    <meta name="description" content="VINCORA AI — intelligence for everything you want to create." />
+    <title>VINCORA AI — Your intelligent workspace</title>
     <style>
       html,body{margin:0;min-height:100%;background:#090d18;color:#eef1ff;font-family:system-ui,sans-serif}
       #boot-status{min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box}
@@ -21,9 +22,9 @@
     <div id="root">
       <div id="boot-status">
         <div class="boot-card">
-          <div class="boot-brand">vexon<span>.</span></div>
+          <div class="boot-brand">VINCORA<span> AI</span></div>
           <div class="boot-title">Starting your workspace…</div>
-          <div class="boot-copy">Vexon is loading. This screen will be replaced automatically when the workspace is ready.</div>
+          <div class="boot-copy">VINCORA is loading. This screen will be replaced automatically when the workspace is ready.</div>
         </div>
       </div>
     </div>
@@ -31,7 +32,7 @@
       window.__vexonShowBootError = function (message) {
         var root = document.getElementById('root');
         if (!root) return;
-        root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand">vexon<span>.</span></div><div class="boot-title">Vexon could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
+        root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand">VINCORA<span> AI</span></div><div class="boot-title">VINCORA could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
         var detail = root.querySelector('.boot-error');
         if (detail) detail.textContent = String(message || 'Unknown startup error');
       };
