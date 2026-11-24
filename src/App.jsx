@@ -4,7 +4,8 @@ import {
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
   Code2, Command, Compass, FileText, FolderKanban, Globe2, GraduationCap,
   LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send,
-  Settings2, Sparkles, WandSparkles, X, Zap
+  Settings2, Sparkles, WandSparkles, X, Zap, Archive, FolderPlus, Save,
+  ArrowLeft, Clock3, MoreHorizontal
 } from 'lucide-react';
 
 const modules = [
@@ -22,6 +23,26 @@ const quickStarts = [
   { icon: BarChart3, label: 'Analyze an idea', prompt: 'Analyze this idea and give me a practical action plan: ' },
 ];
 
+function readJson(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch { return fallback; }
+}
+
+function makeConversation(messages = [], projectId = null, studio = 'AI Workspace') {
+  const firstPrompt = messages.find(message => message.role === 'user')?.content || 'New conversation';
+  return {
+    id: 'conversation-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    title: firstPrompt.slice(0, 58) + (firstPrompt.length > 58 ? '…' : ''),
+    projectId,
+    studio,
+    messages,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
 function App() {
   const [active, setActive] = useState('Overview');
   const [prompt, setPrompt] = useState('');
@@ -29,26 +50,107 @@ function App() {
   const [mode, setMode] = useState('Balanced');
   const [notice, setNotice] = useState('Your workspace is ready. Connect an AI provider to start generating.');
   const [showNotice, setShowNotice] = useState(true);
-  const [messages, setMessages] = useState(() => {
-    try {
-      const current = localStorage.getItem('vincora-chat-messages');
-      const legacy = current ? null : localStorage.getItem('vexon-chat-messages');
-      if (legacy) localStorage.setItem('vincora-chat-messages', legacy);
-      return JSON.parse(current || legacy || '[]');
-    } catch { return []; }
+  const [projects, setProjects] = useState(() => readJson('vincora-projects', []));
+  const [conversations, setConversations] = useState(() => {
+    const saved = readJson('vincora-conversations', null);
+    if (Array.isArray(saved)) return saved;
+    const current = readJson('vincora-chat-messages', null);
+    const legacy = current ? null : readJson('vexon-chat-messages', []);
+    const oldMessages = Array.isArray(current) ? current : (Array.isArray(legacy) ? legacy : []);
+    return oldMessages.length ? [makeConversation(oldMessages)] : [];
   });
+  const [activeConversationId, setActiveConversationId] = useState(() => conversations[0]?.id || null);
+  const [selectedProjectId, setSelectedProjectId] = useState(() => conversations[0]?.projectId || null);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectSearch, setProjectSearch] = useState('');
   const [sending, setSending] = useState(false);
 
+  const activeConversation = conversations.find(item => item.id === activeConversationId) || null;
+  const messages = activeConversation?.messages || [];
+  const selectedProject = projects.find(item => item.id === selectedProjectId) || null;
+  const projectConversations = conversations.filter(item => item.projectId === selectedProjectId);
+
   useEffect(() => {
-    try { localStorage.setItem('vincora-chat-messages', JSON.stringify(messages.slice(-80))); }
-    catch { setNotice('This browser could not save chat history.'); setShowNotice(true); }
-  }, [messages]);
+    try { localStorage.setItem('vincora-projects', JSON.stringify(projects)); }
+    catch { setNotice('This browser could not save projects.'); setShowNotice(true); }
+  }, [projects]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vincora-conversations', JSON.stringify(conversations));
+      const latestLegacyThread = conversations.find(item => item.id === activeConversationId) || conversations[0];
+      if (latestLegacyThread) localStorage.setItem('vincora-chat-messages', JSON.stringify(latestLegacyThread.messages.slice(-80)));
+    } catch { setNotice('This browser could not save conversation history.'); setShowNotice(true); }
+  }, [conversations, activeConversationId]);
+
+  const updateConversation = (conversationId, updater) => {
+    setConversations(current => current.map(item => item.id === conversationId ? updater(item) : item));
+  };
+
+  const startNewConversation = () => {
+    setActiveConversationId(null);
+    setSelectedProjectId(null);
+    setActive('AI Workspace');
+    setPrompt('');
+    setMobileNav(false);
+  };
+
+  const createProject = () => {
+    const name = projectName.trim();
+    if (!name) return;
+    const project = {
+      id: 'project-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      name,
+      description: projectDescription.trim(),
+      context: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      archived: false
+    };
+    setProjects(current => [project, ...current]);
+    setSelectedProjectId(project.id);
+    setProjectName('');
+    setProjectDescription('');
+    setShowProjectForm(false);
+    setActive('Project Detail');
+    setNotice('Project created. Add a brief so VINCORA can understand what you are working towards.');
+    setShowNotice(true);
+  };
+
+  const openProject = (project) => {
+    setSelectedProjectId(project.id);
+    setActive('Project Detail');
+    setActiveConversationId(null);
+    setMobileNav(false);
+  };
+
+  const updateProject = (projectId, patch) => {
+    setProjects(current => current.map(item => item.id === projectId
+      ? { ...item, ...patch, updatedAt: new Date().toISOString() }
+      : item));
+  };
+
+  const archiveProject = (projectId) => {
+    updateProject(projectId, { archived: true });
+    setActive('My Projects');
+    setNotice('Project archived. Its conversations have been preserved.');
+    setShowNotice(true);
+  };
 
   const submitPrompt = async () => {
     const text = prompt.trim();
     if (!text || sending) return;
-    const nextMessages = [...messages, { role: 'user', content: text, id: Date.now() }];
-    setMessages(nextMessages);
+    const conversationId = activeConversationId || ('conversation-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
+    const existing = conversations.find(item => item.id === conversationId);
+    const base = existing || makeConversation([], selectedProjectId, active === 'Overview' ? 'AI Workspace' : active);
+    const nextMessages = [...base.messages, { role: 'user', content: text, id: Date.now() }];
+    const nextConversation = { ...base, id: conversationId, title: existing?.title || (text.slice(0, 58) + (text.length > 58 ? '…' : '')), projectId: base.projectId || selectedProjectId, studio: active, messages: nextMessages, updatedAt: new Date().toISOString() };
+    setConversations(current => existing
+      ? current.map(item => item.id === conversationId ? nextConversation : item)
+      : [nextConversation, ...current]);
+    setActiveConversationId(conversationId);
     setPrompt('');
     setSending(true);
     setNotice('VINCORA is preparing your response with its free model.');
@@ -57,15 +159,28 @@ function App() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })), studio: active, mode })
+        body: JSON.stringify({
+          messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })),
+          studio: active,
+          mode,
+          projectContext: selectedProject?.context || ''
+        })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'VINCORA could not complete that request.');
-      setMessages(current => [...current, { role: 'assistant', content: data.text, id: Date.now() + 1 }]);
+      updateConversation(conversationId, current => ({
+        ...current,
+        messages: [...current.messages, { role: 'assistant', content: data.text, id: Date.now() + 1 }],
+        updatedAt: new Date().toISOString()
+      }));
       setNotice('Response generated using VINCORA’s free AI model.');
       setShowNotice(true);
     } catch (error) {
-      setMessages(current => [...current, { role: 'assistant', content: "I couldn't complete that request. " + error.message + " Your question is still available above; you can try again.", id: Date.now() + 1, error: true }]);
+      updateConversation(conversationId, current => ({
+        ...current,
+        messages: [...current.messages, { role: 'assistant', content: "I couldn't complete that request. " + error.message + " Your question is still available above; you can try again.", id: Date.now() + 1, error: true }],
+        updatedAt: new Date().toISOString()
+      }));
       setNotice(error.message);
       setShowNotice(true);
     } finally {
@@ -92,8 +207,8 @@ function App() {
           <div className="workspace-meta"><strong>Personal workspace</strong><span>Free plan</span></div>
           <ChevronDown size={15} />
         </div>
-        <button className="new-chat" onClick={() => { setActive('Overview'); setPrompt(''); setMessages([]); setMobileNav(false); }}>
-          <Plus size={17} /> New workspace
+        <button className="new-chat" onClick={startNewConversation}>
+          <Plus size={17} /> New conversation
           <span className="shortcut">⌘ K</span>
         </button>
         <div className="nav-label">WORKSPACE</div>
@@ -102,10 +217,9 @@ function App() {
             { label: 'Overview', icon: LayoutGrid },
             { label: 'AI Workspace', icon: MessageSquare },
             { label: 'My Projects', icon: FolderKanban },
-            { label: 'File Workspace', icon: FileText },
           ].map(({ label, icon: Icon }) => (
-            <button key={label} className={active === label ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileNav(false); }}>
-              <Icon size={17} /><span>{label}</span>{label === 'My Projects' && <span className="nav-count">0</span>}
+            <button key={label} className={active === label || (label === 'My Projects' && active === 'Project Detail') ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileNav(false); }}>
+              <Icon size={17} /><span>{label}</span>{label === 'My Projects' && <span className="nav-count">{projects.filter(project => !project.archived).length}</span>}
             </button>
           ))}
         </nav>
@@ -141,6 +255,80 @@ function App() {
         </header>
 
         <div className="content-wrap">
+          {active === 'My Projects' || active === 'Project Detail' ? (
+            <section className="projects-page">
+              <div className="projects-page-heading">
+                <div>
+                  <div className="eyebrow"><span className="eyebrow-dot" /> YOUR WORKSPACE</div>
+                  {active === 'Project Detail' && selectedProject ? <input className="project-name-input" aria-label="Project name" value={selectedProject.name} onChange={event => updateProject(selectedProject.id, { name: event.target.value })} maxLength={80}/> : <h1>Your projects.</h1>}
+                  <p className="welcome-copy">{active === 'Project Detail' ? 'Keep your goals, context and conversations together.' : 'Organise ongoing work and pick up exactly where you left off.'}</p>
+                </div>
+                <div className="project-page-actions">
+                  {active === 'Project Detail' && <button className="project-secondary-button" onClick={() => setActive('My Projects')}><ArrowLeft size={15}/> All projects</button>}
+                  <button className="project-primary-button" onClick={() => { setShowProjectForm(true); setActive('My Projects'); }}><FolderPlus size={15}/> New project</button>
+                </div>
+              </div>
+
+              {showProjectForm && (
+                <div className="project-form-panel">
+                  <div className="project-form-heading"><div><strong>Create a project</strong><span>Give your work a home in VINCORA.</span></div><button aria-label="Close project form" onClick={() => setShowProjectForm(false)}><X size={16}/></button></div>
+                  <label>Project name</label>
+                  <input value={projectName} onChange={event => setProjectName(event.target.value)} placeholder="e.g. Launch my online business" maxLength={80}/>
+                  <label>Short description <span>Optional</span></label>
+                  <textarea value={projectDescription} onChange={event => setProjectDescription(event.target.value)} placeholder="What are you trying to accomplish?" rows={2} maxLength={240}/>
+                  <div className="project-form-actions"><button className="project-secondary-button" onClick={() => setShowProjectForm(false)}>Cancel</button><button className="project-primary-button" onClick={createProject} disabled={!projectName.trim()}><Plus size={14}/> Create project</button></div>
+                </div>
+              )}
+
+              {active === 'My Projects' ? (
+                <>
+                  <div className="project-toolbar">
+                    <div className="project-search"><Search size={15}/><input value={projectSearch} onChange={event => setProjectSearch(event.target.value)} placeholder="Search projects"/></div>
+                    <span>{projects.filter(project => !project.archived).length} active projects</span>
+                  </div>
+                  <div className="project-card-grid">
+                    {projects.filter(project => !project.archived && (project.name + ' ' + project.description).toLowerCase().includes(projectSearch.toLowerCase())).map(project => {
+                      const count = conversations.filter(conversation => conversation.projectId === project.id).length;
+                      return <button className="project-card" key={project.id} onClick={() => openProject(project)}>
+                        <div className="project-card-top"><span className="project-card-icon"><FolderKanban size={18}/></span><MoreHorizontal size={17}/></div>
+                        <strong>{project.name}</strong>
+                        <p>{project.description || 'No description added yet.'}</p>
+                        <div className="project-card-meta"><span><MessageSquare size={12}/> {count} conversations</span><span><Clock3 size={12}/> {new Date(project.updatedAt).toLocaleDateString()}</span></div>
+                      </button>;
+                    })}
+                  </div>
+                  {!projects.some(project => !project.archived && (project.name + ' ' + project.description).toLowerCase().includes(projectSearch.toLowerCase())) && (
+                    <div className="projects-empty"><div className="empty-project-icon"><FolderKanban size={21}/></div><strong>{projectSearch ? 'No matching projects.' : 'A place for your next big idea.'}</strong><span>{projectSearch ? 'Try another search.' : 'Create a project to keep its conversations and context together.'}</span><button className="project-primary-button" onClick={() => setShowProjectForm(true)}><Plus size={14}/> Create your first project</button></div>
+                  )}
+                  {projects.some(project => project.archived) && <div className="archived-note"><Archive size={14}/> {projects.filter(project => project.archived).length} archived projects are safely retained in this browser.</div>}
+                </>
+              ) : selectedProject ? (
+                <>
+                  <div className="project-detail-grid">
+                    <div className="project-detail-main">
+                      <div className="project-detail-panel">
+                        <div className="project-panel-title"><div><strong>Project brief</strong><span>Give VINCORA the background it should use when helping with this project.</span></div><Save size={17}/></div>
+                        <label>Project description</label>
+                        <textarea value={selectedProject.description} onChange={event => updateProject(selectedProject.id, { description: event.target.value })} rows={2} maxLength={500} placeholder="What is this project about?"/>
+                        <label>Context and goals</label>
+                        <textarea className="project-context-input" value={selectedProject.context || ''} onChange={event => updateProject(selectedProject.id, { context: event.target.value })} rows={7} maxLength={3000} placeholder="Add background, goals, important decisions, constraints, preferred tools, and what success looks like. VINCORA will use this context when you chat inside this project."/>
+                        <div className="context-footnote">{(selectedProject.context || '').length}/3000 characters · Saved automatically in this browser</div>
+                      </div>
+                      <div className="project-detail-panel">
+                        <div className="project-panel-title"><div><strong>Project conversations</strong><span>Every conversation started here stays linked to this project.</span></div><MessageSquare size={17}/></div>
+                        {projectConversations.length ? projectConversations.slice().sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)).map(conversation => <button className="project-conversation-row" key={conversation.id} onClick={() => { setSelectedProjectId(selectedProject.id); setActiveConversationId(conversation.id); setActive(conversation.studio || 'AI Workspace'); setMobileNav(false); }}><span className="conversation-row-icon"><MessageSquare size={15}/></span><span><strong>{conversation.title}</strong><small>{conversation.messages.length} messages · {new Date(conversation.updatedAt).toLocaleString()}</small></span><ArrowUpRight size={15}/></button>) : <div className="project-conversations-empty">No conversations yet. Start one and VINCORA will keep it with this project.</div>}
+                        <button className="project-primary-button project-start-chat" onClick={() => { setActiveConversationId(null); setActive('AI Workspace'); setPrompt(''); setMobileNav(false); }}><Plus size={14}/> Start project conversation</button>
+                      </div>
+                    </div>
+                    <aside className="project-detail-side">
+                      <div className="project-detail-panel"><strong>Project details</strong><div className="project-stat"><span>Status</span><b>Active</b></div><div className="project-stat"><span>Conversations</span><b>{projectConversations.length}</b></div><div className="project-stat"><span>Created</span><b>{new Date(selectedProject.createdAt).toLocaleDateString()}</b></div><button className="archive-project-button" onClick={() => archiveProject(selectedProject.id)}><Archive size={14}/> Archive project</button></div>
+                    </aside>
+                  </div>
+                </>
+              ) : <div className="projects-empty"><strong>Project not found.</strong><button className="project-primary-button" onClick={() => setActive('My Projects')}>Return to projects</button></div>}
+            </section>
+          ) : (
+          <>
           <section className="welcome-row">
             <div>
               <div className="eyebrow"><span className="eyebrow-dot" /> YOUR AI WORKSPACE</div>
@@ -157,7 +345,7 @@ function App() {
               <h2>What are we <span>working on</span><br className="desktop-break" /> today?</h2>
               <p>From a quick question to a full project, bring your next idea here.</p>
               {messages.length > 0 && <div className="chat-thread" aria-live="polite">
-                <div className="chat-thread-head"><span>Conversation</span><button onClick={() => setMessages([])}>Clear chat</button></div>
+                <div className="chat-thread-head"><span>{activeConversation?.title || 'Conversation'}</span><button onClick={() => updateConversation(activeConversationId, current => ({ ...current, messages: [], updatedAt: new Date().toISOString() }))}>Clear this conversation</button></div>
                 {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
                   <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
                   <div className="chat-message-content">{message.content}</div>
@@ -206,11 +394,13 @@ function App() {
             </div>
             <div className="projects-panel">
               <div className="section-heading compact"><div><h3>Your projects</h3><p>Everything you're working on, in one place.</p></div><FolderKanban size={19} /></div>
-              <div className="empty-projects"><div className="empty-project-icon"><FolderKanban size={20} /></div><strong>A fresh start.</strong><span>Your projects will appear here when you create one.</span><button onClick={() => { setPrompt('Help me plan a new project: '); document.getElementById('workspace')?.scrollIntoView({ behavior: 'smooth' }); }}>Create a project <Plus size={14} /></button></div>
+              {projects.filter(project => !project.archived).length ? <div className="home-project-list">{projects.filter(project => !project.archived).slice(0,3).map(project => <button key={project.id} onClick={() => openProject(project)}><span className="quick-icon"><FolderKanban size={15}/></span><span>{project.name}</span><ArrowUpRight size={14}/></button>)}</div> : <div className="empty-projects"><div className="empty-project-icon"><FolderKanban size={20} /></div><strong>A fresh start.</strong><span>Your projects will appear here when you create one.</span><button onClick={() => { setShowProjectForm(true); setActive('My Projects'); }}>Create a project <Plus size={14} /></button></div>}
             </div>
           </section>
 
           <footer className="footer"><span>© 2026 VINCORA AI</span><span>Built for ideas that move forward.</span><a href="mailto:hello@vexon.ai">Contact support <ArrowUpRight size={12} /></a></footer>
+          </>
+          )}
         </div>
       </main>
     </div>
