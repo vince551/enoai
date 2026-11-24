@@ -11,12 +11,13 @@ A practical AI workspace for writing, business, development, research, learning 
 - Projects, project briefs and project-linked conversations.
 - Creation Centre for editable documents, importing assistant responses and Markdown/text export.
 - Guided workflows with saved step progress and working notes.
+- Image and video generation through the Agnes AI multimodal API. Video uses the `agnes-video-2.5-flash` model; free access is subject to provider availability and may change.
 - Optional personal context with inspect, edit, opt-in sharing and delete controls.
 
 ## Cost and privacy principles
 
 - Free-first: Groq is the configured AI provider. There is no paid model fallback.
-- AI credentials remain server-side in the Vercel function.
+- AI credentials remain server-side in Vercel functions (`GROQ_API_KEY` for chat and `AGNES_API_KEY` for media).
 - Chat history, projects, documents, workflow progress and personal context are stored in browser localStorage. They are device/browser-specific and are not cloud-synced.
 - Personal context is not sent with chat requests unless the user enables its sharing control.
 - Project briefs remain separate and are included only for conversations associated with that project.
@@ -29,6 +30,7 @@ A practical AI workspace for writing, business, development, research, learning 
 - Documents export as Markdown or plain text; PDF/DOCX export is not included.
 - Workflows are guided checklists and notes, not unattended automation or third-party integrations.
 - Groq free-tier rate limits apply. When the limit is reached, VINCORA reports it and does not switch to a paid provider.
+- Media generation requires an Agnes API key. Its free/default access, rate limits, queue capacity and model availability are controlled by Agnes and may change. Video generation is asynchronous and can take several minutes. VINCORA uses the free `agnes-video-2.5-flash` model only and does not fall back to paid models.
 
 ## AI request limits
 
@@ -45,4 +47,4 @@ npm test
 npm run build
 ```
 
-For local AI requests, set `GROQ_API_KEY` in a local `.env` file. Never commit API keys or place them in frontend code.
+For local AI requests, set `GROQ_API_KEY` and `AGNES_API_KEY` in a local `.env` file. Never commit API keys or place them in frontend code.
