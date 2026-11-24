@@ -57,7 +57,8 @@ export default async function handler(req, res) {
     if (!upstream.ok) {
       const code = result?.error?.code || result?.error?.type || 'provider_error';
       console.error('VINCORA AI provider request failed:', upstream.status, code);
-      return res.status(upstream.status === 429 ? 429 : 502).json({
+      const status = upstream.status === 429 ? 429 : (upstream.status === 401 || upstream.status === 403 ? 503 : 502);
+      return res.status(status).json({
         error: providerErrorMessage(upstream.status)
       });
     }
