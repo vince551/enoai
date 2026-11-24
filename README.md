@@ -1,8 +1,10 @@
-# Vexon
+# VINCORA AI
 
-**Understand → Create → Execute → Improve.**
+**Intelligence. Without limits.**
 
-Vexon is a practical AI workspace for individuals, students, developers, entrepreneurs and small businesses. It helps turn everyday needs into usable outcomes.
+Your intelligent workspace for writing, business, development, research, learning and workflows.
+
+VINCORA AI is a practical AI workspace for individuals, students, developers, entrepreneurs and small businesses. It helps turn everyday needs into usable outcomes.
 
 ## Product modules
 
@@ -26,7 +28,7 @@ Vexon is a practical AI workspace for individuals, students, developers, entrepr
 
 ## Current status
 
-The workspace uses Groq's free-tier API with the model `openai/gpt-oss-20b`. Set the `GROQ_API_KEY` environment variable in Vercel (Production) to enable chat. The API key is read only by the serverless function and is never exposed to browser code. The endpoint does not fall back to a paid provider. Groq free-tier rate limits apply and can change; when a limit is reached, VEXON reports that instead of making a paid request.
+The workspace uses Groq's free-tier API with the model `openai/gpt-oss-20b`. Set the `GROQ_API_KEY` environment variable in Vercel (Production) to enable chat. The API key is read only by the serverless function and is never exposed to browser code. The endpoint does not fall back to a paid provider. Groq free-tier rate limits apply and can change; when a limit is reached, VINCORA reports that instead of making a paid request.
 
 Each request is capped at 12 recent messages and 1,200 output tokens. Conversation history is stored locally in the browser. Authentication, cross-device persistence, file processing, billing and integrations are not connected yet.
 

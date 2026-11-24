@@ -30,13 +30,17 @@ function App() {
   const [notice, setNotice] = useState('Your workspace is ready. Connect an AI provider to start generating.');
   const [showNotice, setShowNotice] = useState(true);
   const [messages, setMessages] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('vexon-chat-messages') || '[]'); }
-    catch { return []; }
+    try {
+      const current = localStorage.getItem('vincora-chat-messages');
+      const legacy = current ? null : localStorage.getItem('vexon-chat-messages');
+      if (legacy) localStorage.setItem('vincora-chat-messages', legacy);
+      return JSON.parse(current || legacy || '[]');
+    } catch { return []; }
   });
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem('vexon-chat-messages', JSON.stringify(messages.slice(-80))); }
+    try { localStorage.setItem('vincora-chat-messages', JSON.stringify(messages.slice(-80))); }
     catch { setNotice('This browser could not save chat history.'); setShowNotice(true); }
   }, [messages]);
 
@@ -47,7 +51,7 @@ function App() {
     setMessages(nextMessages);
     setPrompt('');
     setSending(true);
-    setNotice('Vexon is preparing your response with its free model.');
+    setNotice('VINCORA is preparing your response with its free model.');
     setShowNotice(true);
     try {
       const response = await fetch('/api/chat', {
@@ -56,9 +60,9 @@ function App() {
         body: JSON.stringify({ messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })), studio: active, mode })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Vexon could not complete that request.');
+      if (!response.ok) throw new Error(data.error || 'VINCORA could not complete that request.');
       setMessages(current => [...current, { role: 'assistant', content: data.text, id: Date.now() + 1 }]);
-      setNotice('Response generated using Vexon’s free AI model.');
+      setNotice('Response generated using VINCORA’s free AI model.');
       setShowNotice(true);
     } catch (error) {
       setMessages(current => [...current, { role: 'assistant', content: "I couldn't complete that request. " + error.message + " Your question is still available above; you can try again.", id: Date.now() + 1, error: true }]);
@@ -80,8 +84,8 @@ function App() {
     <div className="app-shell">
       <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
         <a className="brand" href="#" onClick={() => setActive('Overview')}>
-          <span className="brand-mark"><AudioLines size={21} strokeWidth={2.4} /></span>
-          <span>vexon<span className="brand-period">.</span></span>
+          <span className="brand-mark"><span className="brand-glyph">V</span></span>
+          <span>VINCORA<span className="brand-period"> AI</span></span>
         </a>
         <div className="workspace-switch">
           <div className="workspace-avatar">V</div>
@@ -132,7 +136,7 @@ function App() {
           <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>{active}</strong></div>
           <div className="topbar-actions">
             <button className="help-button"><CircleHelp size={17} /><span>Help center</span></button>
-            <button className="upgrade-button" onClick={() => setNotice('Vexon plans will be available soon.')}> <Zap size={14} /> Upgrade</button>
+            <button className="upgrade-button" onClick={() => setNotice('VINCORA plans will be available soon.')}> <Zap size={14} /> Upgrade</button>
           </div>
         </header>
 
@@ -149,19 +153,19 @@ function App() {
           <section className="hero-panel" id="workspace">
             <div className="hero-glow hero-glow-one" /><div className="hero-glow hero-glow-two" />
             <div className="hero-content">
-              <div className="hero-tag"><Sparkles size={13} /> THE VEXON AI WORKSPACE</div>
+              <div className="hero-tag"><Sparkles size={13} /> THE VINCORA AI WORKSPACE</div>
               <h2>What are we <span>working on</span><br className="desktop-break" /> today?</h2>
               <p>From a quick question to a full project, bring your next idea here.</p>
               {messages.length > 0 && <div className="chat-thread" aria-live="polite">
                 <div className="chat-thread-head"><span>Conversation</span><button onClick={() => setMessages([])}>Clear chat</button></div>
-                {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vexon')} key={message.id}>
-                  <div className="chat-message-label">{message.role === 'user' ? 'You' : 'Vexon'}</div>
+                {messages.slice(-16).map(message => <div className={"chat-message " + (message.role === 'user' ? 'from-user' : 'from-vincora')} key={message.id}>
+                  <div className="chat-message-label">{message.role === 'user' ? 'You' : 'VINCORA'}</div>
                   <div className="chat-message-content">{message.content}</div>
                 </div>)}
-                {sending && <div className="chat-message from-vexon"><div className="chat-message-label">Vexon</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
+                {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
               </div>}
               <div className="composer">
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask Vexon anything, or describe what you want to create..." rows={2} />
+                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask VINCORA anything, or describe what you want to create..." rows={2} />
                 <div className="composer-bottom">
                   <div className="composer-tools">
                     <button title="Attach a file" onClick={() => setNotice('File uploads will be available when File Workspace is connected.')}><Paperclip size={16} /></button>
@@ -206,7 +210,7 @@ function App() {
             </div>
           </section>
 
-          <footer className="footer"><span>© 2026 Vexon AI</span><span>Built for ideas that move forward.</span><a href="mailto:hello@vexon.ai">Contact support <ArrowUpRight size={12} /></a></footer>
+          <footer className="footer"><span>© 2026 VINCORA AI</span><span>Built for ideas that move forward.</span><a href="mailto:hello@vexon.ai">Contact support <ArrowUpRight size={12} /></a></footer>
         </div>
       </main>
     </div>

@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
-      error: 'VEXON AI is not connected yet. Add the Groq API key as GROQ_API_KEY in the Vercel Production environment. No paid provider was used.'
+      error: 'VINCORA AI is not connected yet. Add the Groq API key as GROQ_API_KEY in the Vercel Production environment. No paid provider was used.'
     });
   }
 
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     ? 'Think carefully through the problem before answering, but provide only a useful concise explanation.'
     : 'Prioritize clear, direct, practical answers.';
   const system = [
-    'You are Vexon, a helpful AI workspace assistant. Be accurate, useful, and transparent about uncertainty. Never claim to have browsed, executed code, or accessed files unless a tool actually did so.',
+    'You are Vincora, a helpful AI workspace assistant. Be accurate, useful, and transparent about uncertainty. Never claim to have browsed, executed code, or accessed files unless a tool actually did so.',
     studioGuidance[studio] || 'Help the user think clearly, create useful work, and execute practical next steps.',
     mode,
     'Do not invent citations, statistics, capabilities, or completed actions.'
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       const code = result?.error?.code || result?.error?.type || 'provider_error';
-      console.error('Vexon Groq free-tier request failed:', upstream.status, code);
+      console.error('Vincora Groq free-tier request failed:', upstream.status, code);
       if (upstream.status === 429) {
         return res.status(429).json({ error: 'The Groq free-tier limit has been reached temporarily. Wait for the limit to reset and try again. No paid request was made.' });
       }
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ text: text.trim(), model: MODEL });
   } catch (error) {
-    console.error('Vexon Groq request error:', error?.name || 'request_error');
+    console.error('Vincora Groq request error:', error?.name || 'request_error');
     return res.status(504).json({ error: 'The free AI request timed out or could not connect. Please try again.' });
   }
 }
