@@ -237,7 +237,7 @@ function App() {
           messages: history.slice(-12).map(({ role, content }) => ({ role, content })),
           studio,
           mode: activeConversation.mode || mode,
-          projectContext: [project?.context, personalContext].filter(Boolean).join('\\n\\nUSER PERSONAL CONTEXT:\\n')
+          projectContext: [project?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
         })
       });
       const data = await response.json().catch(() => ({}));
