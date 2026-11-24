@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import WorkspaceFeatures from './WorkspaceFeatures.jsx';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3,
   BookOpen, Bot, BriefcaseBusiness, Check, ChevronDown, CircleHelp,
   Code2, Command, Compass, FileText, FolderKanban, Globe2, GraduationCap,
   LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send,
   Settings2, Sparkles, WandSparkles, X, Zap, Archive, FolderPlus, Save,
-  ArrowLeft, Clock3, MoreHorizontal
+  ArrowLeft, Clock3, MoreHorizontal, ShieldCheck
 } from 'lucide-react';
 
 const modules = [
@@ -66,6 +67,7 @@ function App() {
   const [projectDescription, setProjectDescription] = useState('');
   const [projectSearch, setProjectSearch] = useState('');
   const [sending, setSending] = useState(false);
+  const [personalContext, setPersonalContext] = useState(() => readJson('vincora-include-personal-context', false) ? readJson('vincora-personal-context', '') : '');
 
   const activeConversation = conversations.find(item => item.id === activeConversationId) || null;
   const messages = activeConversation?.messages || [];
@@ -163,7 +165,7 @@ function App() {
           messages: nextMessages.slice(-12).map(({ role, content }) => ({ role, content })),
           studio: active,
           mode,
-          projectContext: selectedProject?.context || ''
+          projectContext: [selectedProject?.context, personalContext].filter(Boolean).join('\n\nUSER PERSONAL CONTEXT:\n')
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -217,6 +219,9 @@ function App() {
             { label: 'Overview', icon: LayoutGrid },
             { label: 'AI Workspace', icon: MessageSquare },
             { label: 'My Projects', icon: FolderKanban },
+            { label: 'Creation Centre', icon: FileText },
+            { label: 'Workflows', icon: Activity },
+            { label: 'Memory & Context', icon: ShieldCheck }
           ].map(({ label, icon: Icon }) => (
             <button key={label} className={active === label || (label === 'My Projects' && active === 'Project Detail') ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileNav(false); }}>
               <Icon size={17} /><span>{label}</span>{label === 'My Projects' && <span className="nav-count">{projects.filter(project => !project.archived).length}</span>}
@@ -255,7 +260,7 @@ function App() {
         </header>
 
         <div className="content-wrap">
-          {active === 'My Projects' || active === 'Project Detail' ? (
+          {['Creation Centre', 'Workflows', 'Memory & Context'].includes(active) ? <WorkspaceFeatures active={active} conversations={conversations} projects={projects} onContextChange={setPersonalContext} onUseWorkflowPrompt={workflowPrompt => { setActive('AI Workspace'); setPrompt(workflowPrompt); setActiveConversationId(null); setSelectedProjectId(null); }} /> : active === 'My Projects' || active === 'Project Detail' ? (
             <section className="projects-page">
               <div className="projects-page-heading">
                 <div>
