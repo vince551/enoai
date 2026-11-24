@@ -49,7 +49,7 @@ export default function MediaStudio() {
     try {
       const response = await fetch('/api/media/video', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim(), ratio })
+        body: JSON.stringify({ prompt: prompt.trim(), ratio, seconds: '5' })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Video generation failed.');
@@ -108,7 +108,7 @@ export default function MediaStudio() {
       <div className="media-controls">
         <div><label>Aspect ratio</label><div className="media-ratios">{['16:9','9:16','1:1'].map(value => <button key={value} className={ratio === value ? 'selected' : ''} onClick={() => setRatio(value)}>{value}</button>)}</div></div>
         {mode === 'image' && <div><label>Image model</label><select value={quality} onChange={e => setQuality(e.target.value)}><option value="standard">Agnes Image 2.1 Flash</option><option value="fast">Agnes Image 2.0 Flash · Fast</option></select></div>}
-        {mode === 'video' && <div className="media-model-note"><span className="media-free-dot"/> Agnes Video 2.5 Flash · Free model access (availability may change)</div>}
+        {mode === 'video' && <div className="media-model-note"><span className="media-free-dot"/> Agnes Video 2.5 Flash · 5 seconds · 720P</div>}
       </div>
       <button className="media-generate" onClick={generate} disabled={!prompt.trim() || busy}><span>{busy ? <RefreshCw size={16} className="media-spin"/> : <WandSparkles size={16}/>}</span>{busy ? 'Generating…' : mode === 'image' ? 'Generate image' : 'Generate video'}</button>
       {status && <div className="media-status"><Clock3 size={14}/>{status}</div>}
