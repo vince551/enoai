@@ -7,21 +7,21 @@
 @media(max-width:390px){.content-wrap{padding-left:13px;padding-right:13px}.module-grid{grid-template-columns:1fr}.module-card{min-height:100px;display:grid;grid-template-columns:36px 1fr;align-items:center;column-gap:11px}.module-icon{grid-row:1;margin:0}.module-card-copy{grid-column:2;grid-row:1}.module-arrow{opacity:1}.hero-panel h2{font-size:25px}.composer-tools .mode-select{font-size:9px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
-/* Vexon conversation UI */
+/* VINCORA conversation UI */
 .chat-thread{display:grid;gap:10px;max-width:660px;max-height:390px;overflow:auto;margin:0 0 14px;padding:12px;border:1px solid #a6b6ff24;border-radius:12px;background:#0b1221a8;scrollbar-width:thin;scrollbar-color:#455477 transparent}
 .chat-thread-head{display:flex;align-items:center;justify-content:space-between;color:#aab8e7;font-size:10px;font-weight:700;letter-spacing:.4px}
 .chat-thread-head button{border:0;background:none;color:#8f9fc7;font-size:10px;padding:3px 5px}
 .chat-message{max-width:94%;padding:10px 12px;border:1px solid #ffffff0d;border-radius:10px;background:#151f32;color:#dce3f4}
 .chat-message.from-user{justify-self:end;background:#26365a;border-color:#8da7ff25}
-.chat-message.from-vexon{justify-self:start}
+.chat-message.from-vincora{justify-self:start}
 .chat-message-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:#9eafff;margin-bottom:5px}
 .chat-message-content{font-size:11px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;color:#e0e6f4}
 .chat-typing{display:flex;align-items:center;gap:5px;color:#aab5cd;font-size:10px}
-.chat-typing span{width:5px;height:5px;border-radius:50%;background:#a5b5ff;animation:vexon-pulse 1s infinite ease-in-out}
+.chat-typing span{width:5px;height:5px;border-radius:50%;background:#a5b5ff;animation:vincora-pulse 1s infinite ease-in-out}
 .chat-typing span:nth-child(2){animation-delay:.15s}.chat-typing span:nth-child(3){animation-delay:.3s}
-.send-spinner{width:14px;height:14px;border:2px solid #ffffff70;border-top-color:white;border-radius:50%;animation:vexon-spin .7s linear infinite}
-@keyframes vexon-pulse{0%,80%,100%{opacity:.35;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
-@keyframes vexon-spin{to{transform:rotate(360deg)}}
+.send-spinner{width:14px;height:14px;border:2px solid #ffffff70;border-top-color:white;border-radius:50%;animation:vincora-spin .7s linear infinite}
+@keyframes vincora-pulse{0%,80%,100%{opacity:.35;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes vincora-spin{to{transform:rotate(360deg)}}
 @media(max-width:760px){.chat-thread{max-height:330px;padding:9px}.chat-message{max-width:100%}.chat-message-content{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.chat-typing span,.send-spinner{animation:none}}
 
