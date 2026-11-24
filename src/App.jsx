@@ -184,30 +184,7 @@ function App() {
     setNotice('VINCORA is preparing your response with its free model.');
     setShowNotice(true);
     try {
-      if (isImageGenerationRequest(text)) {
-        setNotice('VINCORA is creating your image…');
-        const response = await fetch('/api/media/image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: text, size: '1024x768', quality: 'standard' })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || 'VINCORA could not generate that image.');
-        const mediaSrc = data.imageData || data.imageUrl;
-        if (!mediaSrc) throw new Error('The image provider returned no image.');
-        updateConversation(conversationId, current => ({
-          ...current,
-          messages: [...current.messages, {
-            role: 'assistant',
-            content: 'Your image is ready. Tap it to open or save it.',
-            mediaType: 'image',
-            mediaSrc,
-            id: Date.now() + 1
-          }],
-          updatedAt: new Date().toISOString()
-        }));
-        setNotice('Image generated using the configured free provider. No paid fallback was used.');
-      } else if (isVideoGenerationRequest(text)) {
+      if (isVideoGenerationRequest(text)) {
         setNotice('VINCORA is submitting your video to Agnes Video 2.5 Flash…');
         const createResponse = await fetch('/api/media/video', {
           method: 'POST',
@@ -260,6 +237,29 @@ function App() {
         } else {
           setNotice('Video generated successfully with Agnes Video 2.5 Flash. No paid fallback was used.');
         }
+      } else if (isImageGenerationRequest(text)) {
+        setNotice('VINCORA is creating your image…');
+        const response = await fetch('/api/media/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, size: '1024x768', quality: 'standard' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'VINCORA could not generate that image.');
+        const mediaSrc = data.imageData || data.imageUrl;
+        if (!mediaSrc) throw new Error('The image provider returned no image.');
+        updateConversation(conversationId, current => ({
+          ...current,
+          messages: [...current.messages, {
+            role: 'assistant',
+            content: 'Your image is ready. Tap it to open or save it.',
+            mediaType: 'image',
+            mediaSrc,
+            id: Date.now() + 1
+          }],
+          updatedAt: new Date().toISOString()
+        }));
+        setNotice('Image generated using the configured free provider. No paid fallback was used.');
       } else {
         const response = await fetch('/api/chat', {
           method: 'POST',
