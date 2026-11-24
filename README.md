@@ -2,35 +2,37 @@
 
 **Intelligence. Without limits.**
 
-Your intelligent workspace for writing, business, development, research, learning and workflows.
+A practical AI workspace for writing, business, development, research, learning and getting work done.
 
-VINCORA AI is a practical AI workspace for individuals, students, developers, entrepreneurs and small businesses. It helps turn everyday needs into usable outcomes.
+## Workspace capabilities
 
-## Product modules
+- Six specialist studios plus the general AI Workspace.
+- Groq-powered chat using the free-tier model `openai/gpt-oss-20b`.
+- Projects, project briefs and project-linked conversations.
+- Creation Centre for editable documents, importing assistant responses and Markdown/text export.
+- Guided workflows with saved step progress and working notes.
+- Optional personal context with inspect, edit, opt-in sharing and delete controls.
 
-- AI Workspace
-- Write Studio
-- Business Assistant
-- Developer Studio
-- Research Assistant
-- Learning Assistant
-- Workflow Studio
-- My Projects
-- File Workspace
+## Cost and privacy principles
 
-## Principles
+- Free-first: Groq is the configured AI provider. There is no paid model fallback.
+- AI credentials remain server-side in the Vercel function.
+- Chat history, projects, documents, workflow progress and personal context are stored in browser localStorage. They are device/browser-specific and are not cloud-synced.
+- Personal context is not sent with chat requests unless the user enables its sharing control.
+- Project briefs remain separate and are included only for conversations associated with that project.
+- Do not store passwords, API keys or highly sensitive information in workspace context.
 
-- Free-first: use provider free tiers with explicit limits; no paid model fallback.
-- Secure by design: AI credentials stay server-side and usage is metered by the backend.
-- User control: consequential actions require clear user intent.
-- Accessible: responsive, mobile-first experience.
-- Modular and cost-conscious: providers and capabilities remain replaceable.
+## Current limitations
 
-## Current status
+- No account authentication or cross-device sync.
+- No server-side document storage or file attachment processing.
+- Documents export as Markdown or plain text; PDF/DOCX export is not included.
+- Workflows are guided checklists and notes, not unattended automation or third-party integrations.
+- Groq free-tier rate limits apply. When the limit is reached, VINCORA reports it and does not switch to a paid provider.
 
-The workspace uses Groq's free-tier API with the model `openai/gpt-oss-20b`. Set the `GROQ_API_KEY` environment variable in Vercel (Production) to enable chat. The API key is read only by the serverless function and is never exposed to browser code. The endpoint does not fall back to a paid provider. Groq free-tier rate limits apply and can change; when a limit is reached, VINCORA reports that instead of making a paid request.
+## AI request limits
 
-Each request is capped at 12 recent messages and 1,200 output tokens. Conversation history is stored locally in the browser. Authentication, cross-device persistence, file processing, billing and integrations are not connected yet.
+Each request is capped at 12 recent messages and 1,200 output tokens. Project/personal context is bounded by the engine's 3,000-character context limit.
 
 ## Development
 
@@ -39,16 +41,8 @@ Requires Node.js 20+.
 ```bash
 npm install
 npm run dev
+npm test
 npm run build
 ```
 
 For local AI requests, set `GROQ_API_KEY` in a local `.env` file. Never commit API keys or place them in frontend code.
-
-## Roadmap
-
-1. Secure server-side AI provider integration.
-2. Authentication and persistent conversations.
-3. Projects and file workspace.
-4. Usage metering and free-tier limits.
-5. Studio-specific workflows.
-6. Billing only after validating usage economics.
