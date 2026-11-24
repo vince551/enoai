@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
   const ratio = ['16:9', '9:16', '1:1'].includes(body.ratio) ? body.ratio : '16:9';
-  const dimensions = ratio === '9:16' ? [720, 1280] : ratio === '1:1' ? [720, 720] : [1280, 720];
+  const seconds = ['4', '5', '6', '7', '8', '9', '10', '11', '12'].includes(String(body.seconds)) ? String(body.seconds) : '5';
 
   if (!prompt) return res.status(400).json({ error: 'Describe the video you want to create.' });
   if (prompt.length > 1200) return res.status(413).json({ error: 'Video prompts must be 1,200 characters or fewer.' });
@@ -31,10 +31,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         prompt,
-        width: dimensions[0],
-        height: dimensions[1],
-        num_frames: 121,
-        frame_rate: 24
+        mode: 'text',
+        seconds,
+        size: '720P',
+        aspect_ratio: ratio,
+        n: 1
       }),
       signal: AbortSignal.timeout(60000)
     });
@@ -44,14 +45,14 @@ export default async function handler(req, res) {
       const status = upstream.status === 429 ? 429 : (upstream.status === 401 || upstream.status === 403 ? 503 : 502);
       return res.status(status).json({
         error: upstream.status === 429
-          ? 'The free video queue is busy or its rate limit has been reached. Wait about a minute before retrying. No paid fallback was used.'
+          ? 'The free video queue is busy or its rate limit has been reached. Wait before retrying. No paid fallback was used.'
           : upstream.status === 401 || upstream.status === 403
             ? 'The Agnes API key is invalid or does not have access to the free video model. Check your account and AGNES_API_KEY. No paid fallback was used.'
             : 'The free video provider rejected this request. No paid fallback was used.'
       });
     }
 
-    const videoId = result?.video_id || result?.data?.video_id || result?.id;
+    const videoId = result?.video_id || result?.id || result?.data?.video_id || result?.task_id;
     if (!videoId || typeof videoId !== 'string') {
       return res.status(502).json({ error: 'The video provider did not return a video task ID. No paid fallback was used.' });
     }
