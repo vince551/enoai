@@ -7,7 +7,7 @@ import {
   Code2, Command, Compass, FileText, FolderKanban, Globe2, GraduationCap,
   LayoutGrid, Menu, MessageSquare, Mic, Paperclip, Plus, Search, Send,
   Settings2, Sparkles, WandSparkles, X, Zap, Archive, FolderPlus, Save,
-  ArrowLeft, Clock3, MoreHorizontal, ShieldCheck, Copy, Download, RefreshCw
+  ArrowLeft, Clock3, MoreHorizontal, ShieldCheck, Copy, Download, RefreshCw, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 
 const modules = [
@@ -69,6 +69,7 @@ function App() {
   const [projectSearch, setProjectSearch] = useState('');
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef(null);
+  const composerRef = useRef(null);
   const [personalContext, setPersonalContext] = useState(() => readJson('vincora-include-personal-context', false) ? readJson('vincora-personal-context', '') : '');
 
   const activeConversation = conversations.find(item => item.id === activeConversationId) || null;
@@ -161,6 +162,7 @@ function App() {
       : [nextConversation, ...current]);
     setActiveConversationId(conversationId);
     setPrompt('');
+    if (composerRef.current) composerRef.current.style.height = '';
     setSending(true);
     setNotice('VINCORA is preparing your response with its free model.');
     setShowNotice(true);
@@ -195,6 +197,17 @@ function App() {
     } finally {
       setSending(false);
     }
+  };
+
+  const setMessageFeedback = (messageId, feedback) => {
+    if (!activeConversationId) return;
+    updateConversation(activeConversationId, current => ({
+      ...current,
+      messages: current.messages.map(message => message.id === messageId
+        ? { ...message, feedback: message.feedback === feedback ? null : feedback }
+        : message),
+      updatedAt: new Date().toISOString()
+    }));
   };
 
   const copyAnswer = async (content) => {
@@ -434,13 +447,17 @@ function App() {
                       <button type="button" onClick={() => exportAnswer(message.content, 'text')} title="Export plain text"><FileText size={13}/> <span>Text</span></button>
                     </>}
                     <button type="button" onClick={() => regenerateResponse(message.id)} disabled={sending} title={message.error ? 'Retry response' : 'Regenerate answer'}><RefreshCw size={13}/> <span>{message.error ? 'Retry' : 'Regenerate'}</span></button>
+                    {!message.error && <>
+                      <button type="button" className={message.feedback === 'up' ? 'feedback-selected' : ''} onClick={() => setMessageFeedback(message.id, 'up')} aria-label="Mark answer helpful" title="Helpful"><ThumbsUp size={13}/></button>
+                      <button type="button" className={message.feedback === 'down' ? 'feedback-selected' : ''} onClick={() => setMessageFeedback(message.id, 'down')} aria-label="Mark answer not helpful" title="Not helpful"><ThumbsDown size={13}/></button>
+                    </>}
                   </div>}
                 </div>)}
                 {sending && <div className="chat-message from-vincora"><div className="chat-message-label">VINCORA</div><div className="chat-typing"><span /><span /><span /> Thinking…</div></div>}
                 <div ref={chatEndRef} />
               </div>}
               <div className="composer">
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask VINCORA anything, or describe what you want to create..." rows={2} />
+                <textarea ref={composerRef} value={prompt} onChange={e => { setPrompt(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px'; }} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(); } }} placeholder="Ask VINCORA anything, or describe what you want to create..." rows={2} />
                 <div className="composer-bottom">
                   <div className="composer-tools">
                     <button title="Attach a file" onClick={() => setNotice('File uploads will be available when File Workspace is connected.')}><Paperclip size={16} /></button>
