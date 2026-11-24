@@ -3,6 +3,7 @@ import {
   AI_PROVIDER,
   MAX_OUTPUT_TOKENS,
   buildSystemPrompt,
+  normaliseProjectContext,
   normaliseConversation,
   providerErrorMessage,
   resolveMode,
@@ -34,7 +35,8 @@ export default async function handler(req, res) {
 
   const studio = resolveStudio(body.studio);
   const mode = resolveMode(body.mode);
-  const system = buildSystemPrompt(studio, mode);
+  const projectContext = normaliseProjectContext(body.projectContext);
+  const system = buildSystemPrompt(studio, mode, projectContext);
 
   try {
     const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
