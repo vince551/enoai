@@ -389,7 +389,7 @@ function App() {
     <div className="app-shell">
       <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
         <a className="brand" href="#" onClick={() => setActive('Overview')}>
-          <span className="brand-mark"><span className="brand-glyph">V</span></span>
+          <img className="brand-mark" src="/vincora-logo.jpg" alt="VINCORA AI logo" />
           <span>VINCORA<span className="brand-period"> AI</span></span>
         </a>
         <div className="workspace-switch">
