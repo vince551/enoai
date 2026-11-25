@@ -120,7 +120,9 @@ export default async function handler(req, res) {
       error: 'Cloudflare returned an unsupported image response. No paid fallback was used.'
     });
   } catch (error) {
-    console.error('VINCORA Cloudflare image request error:', error?.name || 'request_error');
+    const detail = String(error?.message || error?.cause?.message || 'unknown_request_error').slice(0, 240);
+    const causeCode = String(error?.cause?.code || error?.code || '').slice(0, 80);
+    console.error('VINCORA Cloudflare image request error:', error?.name || 'request_error', detail, causeCode);
     return res.status(504).json({
       error: 'Free image generation timed out or Cloudflare could not be reached. Try again later. No paid fallback was used.'
     });
