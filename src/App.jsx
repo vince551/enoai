@@ -35,9 +35,11 @@ function readJson(key, fallback) {
 
 function isVideoGenerationRequest(value) {
   const text = String(value || '').trim();
-  const action = /\b(?:generate|create|make|produce|render|animate)\b/i.test(text);
-  const subject = /\b(?:video|clip|movie|animation|animated scene|motion sequence|text.to.video)\b/i.test(text);
-  return (action && subject) || /^\s*(?:video|animate)\b/i.test(text);
+  const action = /\b(?:generate|create|make|produce|render|animate|convert|transform|want|need)\b/i.test(text);
+  const subject = /\b(?:video|videos|clip|movie|animation|animated scene|motion sequence|text.to.video)\b/i.test(text);
+  return (action && subject)
+    || /^\s*(?:video|videos|animate)\b/i.test(text)
+    || /^\s*(?:a|an)\s+(?:\d+[- ]second\s+)?video\b/i.test(text);
 }
 
 function isImageGenerationRequest(value) {
@@ -338,7 +340,52 @@ function App() {
     setNotice('VINCORA is generating a fresh version of this answer.');
     setShowNotice(true);
     try {
-      if (isImageGenerationRequest(history[history.length - 1]?.content)) {
+      if (isVideoGenerationRequest(history[history.length - 1]?.content)) {
+        const videoPrompt = history[history.length - 1].content;
+        const response = await fetch('/api/media/video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: videoPrompt, ratio: '16:9', seconds: '5' })
+        });
+        const created = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(created.error || 'VINCORA could not regenerate that video.');
+        updateConversation(activeConversation.id, current => ({
+          ...current,
+          messages: current.messages.map(message => message.id === messageId
+            ? { ...message, content: 'Your video is processing with Agnes Video 2.5 Flash.', mediaType: 'video', mediaStatus: 'processing', mediaSrc: undefined, error: false }
+            : message),
+          updatedAt: new Date().toISOString()
+        }));
+        let videoReady = false;
+        for (let attempt = 0; attempt < 60; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          const statusResponse = await fetch('/api/media/video-status?videoId=' + encodeURIComponent(created.videoId), { cache: 'no-store' });
+          const statusData = await statusResponse.json().catch(() => ({}));
+          if (!statusResponse.ok) throw new Error(statusData.error || 'Could not check regenerated video progress.');
+          if (statusData.status === 'failed') throw new Error(statusData.error || 'Agnes could not regenerate this video.');
+          if (statusData.status === 'completed' && statusData.videoUrl) {
+            updateConversation(activeConversation.id, current => ({
+              ...current,
+              messages: current.messages.map(message => message.id === messageId
+                ? { ...message, content: 'Your regenerated video is ready.', mediaType: 'video', mediaStatus: 'completed', mediaSrc: statusData.videoUrl, error: false, regeneratedAt: new Date().toISOString() }
+                : message),
+              updatedAt: new Date().toISOString()
+            }));
+            videoReady = true;
+            break;
+          }
+        }
+        if (!videoReady) {
+          updateConversation(activeConversation.id, current => ({
+            ...current,
+            messages: current.messages.map(message => message.id === messageId
+              ? { ...message, content: 'The video is still processing upstream. Try checking again later.', mediaType: 'video', mediaStatus: 'timeout', mediaSrc: undefined }
+              : message),
+            updatedAt: new Date().toISOString()
+          }));
+        }
+        setNotice(videoReady ? 'A fresh video has been generated.' : 'The video is still processing upstream.');
+      } else if (isImageGenerationRequest(history[history.length - 1]?.content)) {
         const response = await fetch('/api/media/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
