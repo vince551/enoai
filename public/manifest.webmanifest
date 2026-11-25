@@ -1,0 +1,26 @@
+{
+  "name": "VINCORA AI — Your intelligent workspace",
+  "short_name": "VINCORA",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d18",
+  "theme_color": "#090d18",
+  "description": "VINCORA AI — intelligence for everything you want to create.",
+  "icons": [
+    {
+      "src": "/vincora-logo.jpg",
+      "sizes": "665x665",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/vincora-logo.jpg",
+      "sizes": "665x665",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ]
+}
