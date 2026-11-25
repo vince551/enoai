@@ -4,14 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#090d18" />
-    <link rel="icon" type="image/svg+xml" href="/vincora-mark.svg" />
+    <link rel="icon" type="image/jpeg" sizes="665x665" href="/vincora-logo.jpg" />
+    <link rel="apple-touch-icon" href="/vincora-logo.jpg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="description" content="VINCORA AI — intelligence for everything you want to create." />
     <title>VINCORA AI — Your intelligent workspace</title>
     <style>
       html,body{margin:0;min-height:100%;background:#090d18;color:#eef1ff;font-family:system-ui,sans-serif}
       #boot-status{min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box}
       .boot-card{width:min(440px,100%);padding:28px;border:1px solid #293653;border-radius:18px;background:#111a2b;box-sizing:border-box}
-      .boot-brand{font-size:24px;font-weight:800;letter-spacing:-1px;margin-bottom:18px}
+      .boot-brand{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:800;letter-spacing:-1px;margin-bottom:18px}.boot-brand img{width:38px;height:38px;object-fit:contain;border-radius:10px}
       .boot-brand span{color:#91aaff}
       .boot-title{font-size:17px;font-weight:700;margin-bottom:8px}
       .boot-copy{font-size:13px;line-height:1.6;color:#aab5ce}
@@ -22,7 +24,7 @@
     <div id="root">
       <div id="boot-status">
         <div class="boot-card">
-          <div class="boot-brand">VINCORA<span> AI</span></div>
+          <div class="boot-brand"><img src="/vincora-logo.jpg" alt="" /> VINCORA<span> AI</span></div>
           <div class="boot-title">Starting your workspace…</div>
           <div class="boot-copy">VINCORA is loading. This screen will be replaced automatically when the workspace is ready.</div>
         </div>
@@ -32,7 +34,7 @@
       window.__vincoraShowBootError = function (message) {
         var root = document.getElementById('root');
         if (!root) return;
-        root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand">VINCORA<span> AI</span></div><div class="boot-title">VINCORA could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
+        root.innerHTML = '<div id="boot-status"><div class="boot-card"><div class="boot-brand"><img src="/vincora-logo.jpg" alt="" /> VINCORA<span> AI</span></div><div class="boot-title">VINCORA could not start</div><div class="boot-copy">A browser error stopped the workspace from loading. Share the diagnostic below so it can be fixed.</div><div class="boot-error"></div></div></div>';
         var detail = root.querySelector('.boot-error');
         if (detail) detail.textContent = String(message || 'Unknown startup error');
       };
